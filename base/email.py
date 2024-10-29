@@ -7,7 +7,7 @@
 
 # def send_account_activation_email(email , email_token):
 
-#     message = f'Hi, click on the link to activate your account http://127.0.0.1:8000/accounts/activate/{email_token}'
+#     message = f'Hi, click on the link to activate your account http://51.20.4.28/accounts/activate/{email_token}'
     
 
 

@@ -82,10 +82,10 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'MCQwave',
-        'USER': 'postgres',
-        'PASSWORD':'admin',
-        'HOST':'localhost',
+        'NAME': 'mcqwave_test',
+        'USER': 'mcqwave_test_user',
+        'PASSWORD':'NL9kucgdpn4ZK2IWK88fYqPggOngrdFz',
+        'HOST':'dpg-csgbno5umphs73b2q2p0-a.oregon-postgres.render.com',
         'PORT':''
     }
 }

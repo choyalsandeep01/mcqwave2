@@ -1,0 +1,97 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+
+    <link rel="stylesheet" href="/media/css/radar.css">
+
+    <div class="chart-container">
+        <canvas id="radarChart"></canvas>
+    </div>
+
+    <!-- Pass chart data to JavaScript -->
+    <script id="chartLabels" type="application/json">
+        {{ labels|safe }}
+    </script>
+    <script id="chartData" type="application/json">
+        {{ data|safe }}
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Ensure the correct context is set for the radar chart
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+
+        // Fetch and parse JSON data from embedded script tags
+        const labelsElement = document.getElementById('chartLabels').textContent.trim();
+        const dataElement = document.getElementById('chartData').textContent.trim();
+
+        // Ensure the content is valid JSON before parsing
+        const labels = labelsElement ? JSON.parse(labelsElement) : [];
+        const data = dataElement ? JSON.parse(dataElement) : [];
+
+        // Initialize the radar chart with the correct data and configuration
+        const radarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: labels,  // Array of subjects fetched from backend
+                datasets: [{
+                    label: 'Performance',
+                    data: data,  // Corresponding performance percentages
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,  // This allows the chart to grow in width/height
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: false
+                        },
+                        ticks: {
+                            stepSize: 20,  // Adjusts the steps between percentage values
+                            backdropColor: 'transparent',  // Removes the background behind tick labels
+                            font: {
+                                size: 10,  // Reduce font size to make labels fit better
+                            }
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 12  // Smaller font for the legend to save space
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `${tooltipItem.label}: ${tooltipItem.raw}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endblock %}
+
+    {% block pp %}
+      <li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">
+          <i class="fas fa-user-circle profile-icon"></i>
+          {{ user.username }}
+        </a>
+        <div class="dropdown-content">
+          <a href="#">Settings</a>
+          <a href="{% url 'logout' %}">Logout</a>
+        </div>
+      </li>
+    {% endblock %}

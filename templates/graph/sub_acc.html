@@ -1,0 +1,170 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Make sure the container takes up 100% width and height of the viewport */
+        body {
+            margin: 0;
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #eef2f7;
+            min-height:100vh;
+        }
+        footer {
+            margin-top: auto;
+            font-size: 0.9em;
+            background:#DC143C !important;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 1200px;
+            height: 60vh; /* Default height */
+            max-height: 600px; /* Max height */
+            margin: 20px;
+            overflow-x:auto;
+            overflow-y:hidden;
+            flex-grow: 1; 
+            
+        }
+        canvas {
+            min-width: 400px; /* Ensure that the canvas has enough width to fit 2 bars comfortably */
+            max-width: 8000px; /* Allow more bars to be shown on scrolling */
+        }
+        nav{
+            background:#DC143C;}
+        a.active, a:hover {
+                background: #f15474;
+                transition: .5s;
+            }
+     
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .chart-container {
+                width: 95%;
+                height: 50vh; /* Reduced height for mobile */
+                max-height: 500px; /* Max height */
+            }
+            nav ul{
+                background:#6d0c20;
+            }
+            a:hover, a.active {
+                
+                color: #ffffff;
+            }
+        }
+           
+        
+        
+        /* Smaller devices */
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 40vh; /* Further reduced height for very small screens */
+                max-height: 400px; /* Max height */
+            }
+           
+        }
+    </style>
+
+    <div class="chart-container">
+        <h2 class="chart-title">Performance Analysis</h2>
+        <canvas id="analysisChart"></canvas>
+    </div>
+
+    <!-- Pass data to JavaScript -->
+    <script>
+        // Data passed from Django context
+        const labels = {{ labels|safe }};  // Subject names
+        const attempted = {{ attempted|safe }};  // Attempted questions count
+        const correct = {{ correct|safe }};  // Correct answers count
+
+        // Select the canvas element where the chart will be rendered
+        const ctx = document.getElementById('analysisChart').getContext('2d');
+
+        // Create the chart using Chart.js
+        const analysisChart = new Chart(ctx, {
+            type: 'bar',  // Choose the type of chart (bar, line, etc.)
+            data: {
+                labels: labels,  // Labels for the x-axis (subject names)
+                datasets: [
+                    {
+                        label: 'Attempted',  // Label for the first dataset
+                        data: attempted,  // Data for attempted questions
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',  // Color for attempted bars
+                        borderColor: 'rgba(54, 162, 235, 1)',  // Border color for attempted bars
+                        borderWidth: 1  // Border width of the bars
+                    },
+                    {
+                        label: 'Correct',  // Label for the second dataset
+                        data: correct,  // Data for correct answers
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',  // Color for correct bars
+                        borderColor: 'rgba(75, 192, 192, 1)',  // Border color for correct bars
+                        borderWidth: 1  // Border width of the bars
+                    }
+                ]
+            },
+            options: {
+                responsive: true,  // Ensure the chart is responsive
+                maintainAspectRatio: false,  // Allow the chart to grow and shrink with its container
+                plugins: {
+                    legend: {
+                        position: 'top',  // Position of the legend
+                        labels: {
+                            color: '#333'  // Color of the legend text
+                        }
+                    },
+                    
+                    tooltip: {
+                        mode: 'index', // Ensure tooltips activate on the nearest bar
+                        intersect: false, // Hover detection improved
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',  // Trigger tooltips when near a bar
+                    axis: 'x',  // Use the x-axis for detecting hover events
+                    intersect: false  // Ensures hover triggers even if not directly on the bar center
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Subjects',  // Title for the x-axis
+                            color: '#333'
+                        },
+                        ticks: {
+                            color: '#333'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Number of Questions',  // Title for the y-axis
+                            color: '#333'
+                        },
+                        ticks: {
+                            beginAtZero: true,
+                            color: '#333'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endblock %}
+
+    {% block pp %}
+      <li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">
+          <i class="fas fa-user-circle profile-icon"></i>
+          {{ user.username }}
+        </a>
+        <div class="dropdown-content">
+          <a href="#">Settings</a>
+          <a href="{% url 'logout' %}">Logout</a>
+        </div>
+      </li>
+    {% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Home-Login{% endblock title %}Home-Register
+
+{% block content %}
+<link rel="stylesheet" href="/media/css/signup.css">
+<div class="signup-container">
+    <div class="signup-box">
+        <h2>Login Here</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {% include "base/alert.html" %}
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <button type="submit">Login</button>
+            <p>Dont have an account? <a href="#">Signup</a></p>
+        </form>
+    </div>
+</div>
+{% endblock %}

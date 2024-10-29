@@ -1,0 +1,109 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+
+    <link rel="stylesheet" href="/media/css/pomegranate/pom_cus_test_wise.css">
+
+    <div class="container">
+
+        <!-- Section 1: Test Session Overview -->
+        <section class="test-session">
+            <h1>Test Session Overview</h1>
+            <div class="test-info">
+                <p><strong>Created At:</strong> {{ test_session.created_at }}</p>
+                <p><strong>Selections:</strong> {{ test_session.selections|join:", " }}</p>
+                <p><strong>Total Questions:</strong> {{ test_session.total_questions|floatformat:0 }}</p>
+                <p><strong>Score:</strong> {{ test_session.score|floatformat:0 }}</p>
+                <p><strong>Time Taken:</strong> {{ test_session.timetaken_minutes }} minutes</p>
+
+
+            </div>
+        </section>
+
+        <!-- Section 2: Question Details -->
+        {% for question in questions %}
+<section class="question-details">
+    <h2>Question {{ forloop.counter }}: {{ question.question_text }}</h2>
+    <div class="question-content">
+
+        {% if question.image %}
+        <img src="{{ question.image }}" alt="Question Image" class="question-img">
+        {% endif %}
+        
+        <div class="options">
+            <p><strong>Options:</strong></p>
+            <div class="option-box {% if question.options.0 == question.correct_option %}correct-answer{% endif %}">
+                {{ question.options.0 }}
+            </div>
+            <div class="option-box {% if question.options.1 == question.correct_option %}correct-answer{% endif %}">
+                {{ question.options.1 }}
+            </div>
+            <div class="option-box {% if question.options.2 == question.correct_option %}correct-answer{% endif %}">
+                {{ question.options.2 }}
+            </div>
+            <div class="option-box {% if question.options.3 == question.correct_option %}correct-answer{% endif %}">
+                {{ question.options.3 }}
+            </div>
+        </div>
+
+        <div class="question-meta">
+            <p><strong>Explanation:</strong> {{ question.explanation }}</p>
+            <div class="status-badges">
+                <span class="badge topic">{{ question.hierarchy }}</span>
+                <span class="badge difficulty">{{ question.difficulty }}</span>
+                <span class="badge type">{{ question.type }}</span>
+                <span class="badge result {% if question.is_correct %}correct{% elif not question.is_attempted %}not-attempted{% else %}incorrect{% endif %}">
+                    {% if question.is_correct %}
+                        Correct
+                    {% elif not question.is_attempted %}
+                        Not Attempted
+                    {% else %}
+                        Incorrect
+                    {% endif %}
+                </span>
+                <span class="badge type">Time Spent(seconds):  {{ question.time_spent }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endfor %}
+
+        <!-- Section 3: Feedback -->
+        <section class="feedback">
+            <h3>Feedback</h3>
+            <form>
+                <label for="feedback">Leave your feedback:</label>
+                <textarea id="feedback" rows="4" placeholder="Your feedback..."></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </section>
+
+    </div>
+
+    <script>// For handling feedback submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const feedback = document.getElementById('feedback').value;
+            if(feedback.trim() !== "") {
+                alert('Thank you for your feedback!');
+                document.getElementById('feedback').value = '';
+            } else {
+                alert('Please enter your feedback.');
+            }
+        });
+    </script>
+    {% endblock %}
+
+    {% block pp %}
+      <li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">
+          <i class="fas fa-user-circle profile-icon"></i>
+          {{ user.username }}
+        </a>
+        <div class="dropdown-content">
+          <a href="#">Settings</a>
+          <a href="{% url 'logout' %}">Logout</a>
+        </div>
+      </li>
+    {% endblock %}
+    

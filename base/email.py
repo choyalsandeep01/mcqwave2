@@ -45,7 +45,7 @@ def send_account_activation_email(email, email_token):
 
     Thank you for registering with us. Please click the link below to activate your account:
     
-    <a href="http://127.0.0.1:8000/accounts/activate/{email_token}">Activate your account</a>
+    <a href="http://51.20.4.28/accounts/activate/{email_token}">Activate your account</a>
     
     If you did not sign up for this account, please ignore this email.
     

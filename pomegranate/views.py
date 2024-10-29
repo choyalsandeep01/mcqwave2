@@ -1,0 +1,1106 @@
+from django.shortcuts import render
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from mcqs.models import Subject, Unit, Chapter, Topic
+from django.http import JsonResponse
+from mcqs.models import MCQ,TestSession, TestAnswer, difficulties
+import json
+from django.db.models import Q
+# Create your views here.
+from django.core.serializers import serialize
+from rest_framework.renderers import JSONRenderer
+from mcqs.serializers import MCQSerializer,MCQSubmitSerializer
+import random
+import uuid
+from django.views.decorators.csrf import csrf_exempt
+from collections import defaultdict
+# Create your views here.
+def pom_home(request,email_token):
+    return render(request, 'pom_home/pom_home.html')
+
+
+def  pom_overall(request, email_token):
+    return render(request, 'pom_overall/pom_overall.html')
+
+from django.shortcuts import render
+from django.db.models import Avg, F, Func
+from django.db.models.functions import Cast
+from django.db.models import UUIDField
+from mcqs.models import TestSession, TestAnswer, MCQ, difficulties
+
+
+
+def analysis_by_difficulty(request, email_token):
+    difficulties_list = ['Easy', 'Medium', 'Tough']
+
+    if request.method == 'POST':
+        selected_difficulty = request.POST.get('difficulty')
+        if selected_difficulty in difficulties_list:
+            # Convert mcq_uid to UUID for comparison
+            test_answers = TestAnswer.objects.annotate(
+                mcq_uid_as_uuid=Cast('mcq_uid', output_field=UUIDField())
+            ).filter(
+                test_session__user=request.user,
+                mcq_uid_as_uuid__in=MCQ.objects.filter(
+                    difficulty__name=selected_difficulty
+                ).values_list('uid', flat=True),
+                timespent__gt=0  # Filter out records where timespent is 0 or negative
+            )
+
+            total_questions = test_answers.count()
+            correct_questions = test_answers.filter(correct=True).count()
+            incorrect_questions = total_questions - correct_questions
+            average_time = test_answers.aggregate(average_time=Avg('timespent'))['average_time']
+
+            test_sessions = TestSession.objects.filter(
+                user=request.user,
+                test_id__in=test_answers.values_list('test_session__test_id', flat=True)
+            )
+
+            test_session_details = []
+            for session in test_sessions:
+                session_answers = test_answers.filter(test_session=session)
+                session_details = {
+                    'session': session,
+                    'total_questions': session_answers.count(),
+                    'correct': session_answers.filter(correct=True).count(),
+                    'incorrect': session_answers.filter(correct=False).count(),
+                    'average_time': session_answers.aggregate(average_time=Avg('timespent'))['average_time']
+                }
+                test_session_details.append(session_details)
+
+            # Data for the graph
+            graph_data = {
+                'labels': [str(session.test_id) for session in test_sessions],
+                'total_questions': [session_details['total_questions'] for session_details in test_session_details],
+                'correct': [session_details['correct'] for session_details in test_session_details],
+                'incorrect': [session_details['incorrect'] for session_details in test_session_details],
+                'average_time': [session_details['average_time'] for session_details in test_session_details]
+            }
+
+            context = {
+                'difficulty': selected_difficulty,
+                'total_questions': total_questions,
+                'correct_questions': correct_questions,
+                'incorrect_questions': incorrect_questions,
+                'average_time': average_time,
+                'test_sessions': test_session_details,
+                'graph_data': graph_data
+            }
+            context.update({'difficulties': difficulties_list})
+
+            return render(request, 'ana/ana.html', context)
+
+    return render(request, 'ana/ana.html', {'difficulties': difficulties_list})
+
+# views.py
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer
+from django.db.models import Avg, Count, Case, When, IntegerField
+
+from decimal import Decimal
+
+def get_accuracy_data(request):
+    # Get all test sessions that are submitted
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True).order_by('created_at')
+    total_sessions = len(test_sessions)
+    
+    # Determine group size based on the number of test sessions
+    if total_sessions < 5:
+        group_size = 1  # Show individual scores
+    elif total_sessions <= 10:
+        group_size = 2
+    elif total_sessions <= 20:
+        group_size = 4
+    else:
+        group_size = 10
+
+    accuracy_data = []
+
+    # Iterate over test sessions in groups based on the determined group size
+    for i in range(0, total_sessions, group_size):
+        group = test_sessions[i:i + group_size]
+        group_accuracy = Decimal(0)
+        total_questions = 0
+        unique_selections = set()  # To track unique components across the group
+
+        for session in group:
+            correct_answers = TestAnswer.objects.filter(
+                test_session=session,
+                correct=True
+            ).count()
+
+            total_questions += session.total_questions
+            if session.total_questions > 0:
+                session_accuracy = (Decimal(correct_answers) / session.total_questions) * 100
+                group_accuracy += session_accuracy
+
+            # Collect selections for the current session and avoid duplicates
+            for selection in session.selections:
+                unique_selections.add(selection)  # Add only unique selections
+
+        # Calculate average accuracy or individual accuracy for single tests
+        if group_size == 1:  # Individual scores
+            session = group[0]
+            label = f'Test {i + 1}'
+            accuracy = float(group_accuracy) if total_questions > 0 else 0
+        else:  # Average accuracy for groups
+            label = f'Tests {i + 1} - {i + len(group)}'
+            accuracy = float(group_accuracy / len(group)) if len(group) > 0 else 0
+
+        # Append data to the list
+        accuracy_data.append({
+            'label': label,
+            'accuracy': accuracy,
+            'selections': list(unique_selections)  # Convert set back to list for use in template
+        })
+
+    return accuracy_data
+
+
+
+def accuracy_vs_tests(request, email_token):
+    accuracy_data = get_accuracy_data(request)
+    return render(request, 'graph/acc_test.html', {'accuracy_data': accuracy_data})
+
+
+
+
+
+
+from django.shortcuts import render
+from mcqs.models import Subject, MCQ, TestAnswer, Topic, Unit
+import uuid
+
+def analysis_view_sub_acc(request, email_token):
+    # Fetch all MCQ UIDs from submitted TestSessions as strings
+    submitted_mcq_uids = TestAnswer.objects.filter(
+        test_session__submitted=True,
+        test_session__user=request.user
+    ).values_list('mcq_uid', flat=True).distinct()
+
+    # Fetch MCQs that are associated with these UIDs
+    related_mcqs = MCQ.objects.filter(uid__in=submitted_mcq_uids)  # `uid` is string
+
+    # Fetch Topics related to these MCQs
+    related_topics = Topic.objects.filter(
+        uid__in=related_mcqs.values_list('topic__uid', flat=True)  # `uid` is string
+    ).distinct()
+
+    # Fetch Units related to these Topics
+    related_units = Unit.objects.filter(
+        chapters__topics__in=related_topics
+    ).distinct()
+
+    # Fetch Subjects related to these Units
+    submitted_subjects = Subject.objects.filter(
+        units__in=related_units
+    ).distinct()
+
+    labels = [subject.name for subject in submitted_subjects]
+
+    # Prepare data lists
+    attempted = []
+    correct = []
+
+    for subject in submitted_subjects:
+        # Fetch MCQ UIDs related to this subject
+        mcq_uids = MCQ.objects.filter(topic__chapter__unit__subject=subject).values_list('uid', flat=True)
+
+        # Total number of attempts for the subject
+        attempts_count = TestAnswer.objects.filter(
+            mcq_uid__in=mcq_uids,
+            test_session__submitted=True
+        ).count()
+
+        # Correct answers count
+        correct_count = TestAnswer.objects.filter(
+            mcq_uid__in=mcq_uids,
+            correct=True,
+            test_session__submitted=True
+        ).count()
+
+        attempted.append(attempts_count)
+        correct.append(correct_count)
+
+    context = {
+        'labels': labels,
+        'attempted': attempted,
+        'correct': correct,
+    }
+    return render(request, 'graph/sub_acc.html', context)
+
+
+
+# views.py
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+
+def get_performance_data(request):
+    # Fetch all submitted test sessions
+    test_sessions = TestSession.objects.filter(user=request.user,submitted=True)
+
+    # Prepare a dictionary to store correct and total counts per subject
+    subject_performance = {}
+
+    # Iterate through each test session
+    for session in test_sessions:
+        # Fetch all related test answers
+        answers = TestAnswer.objects.filter(test_session=session)
+
+        for answer in answers:
+            try:
+                # Get the associated MCQ using UUID
+                mcq = MCQ.objects.get(uid=answer.mcq_uid)
+                subject_name = mcq.topic.chapter.unit.subject.name
+
+                # Initialize counters if not already present
+                if subject_name not in subject_performance:
+                    subject_performance[subject_name] = {'correct': 0, 'total': 0}
+
+                # Increment total count
+                subject_performance[subject_name]['total'] += 1
+
+                # Increment correct count if the answer is correct
+                if answer.correct:
+                    subject_performance[subject_name]['correct'] += 1
+
+            except MCQ.DoesNotExist:
+                # Handle case where MCQ doesn't exist for the UUID
+                continue
+
+    # Calculate performance percentage for each subject
+    subject_percentage = {
+        subject: (data['correct'] / data['total']) * 100
+        for subject, data in subject_performance.items()
+        if data['total'] > 0
+    }
+
+    return subject_percentage
+
+import json
+
+def performance_radar_view(request, email_token):
+    performance_data = get_performance_data(request)
+    labels = list(performance_data.keys())
+    data = list(performance_data.values())
+    data = [round(value, 2) for value in performance_data.values()]
+    context = {
+        'labels': json.dumps(labels),  # Convert Python list to JSON
+        'data': json.dumps(data),      # Convert Python list to JSON
+    }
+
+    return render(request, 'graph/radar.html', context)
+
+
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+
+def get_difficulty_data(request):
+    # Data structure to hold count and total time for each difficulty
+    difficulty_data = {
+        'Easy': {'total_questions': 0, 'total_time': 0, 'avg_time': 0},
+        'Medium': {'total_questions': 0, 'total_time': 0, 'avg_time': 0},
+        'Tough': {'total_questions': 0, 'total_time': 0, 'avg_time': 0}
+    }
+
+    # Fetch test sessions where submitted=True
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True)
+
+    for session in test_sessions:
+        # Fetch all answers for the current session
+        test_answers = TestAnswer.objects.filter(test_session=session, timespent__gt=0)  # Filter out timespent <= 0
+        
+        for answer in test_answers:
+            try:
+                # Fetch the corresponding MCQ using mcq_uid
+                mcq = MCQ.objects.get(uid=answer.mcq_uid)
+                
+                # Get the difficulty level of the MCQ
+                difficulty = mcq.difficulty.name  # Assuming 'name' contains 'Easy', 'Medium', 'Tough'
+                
+                # Update the total count and time spent for the difficulty level
+                difficulty_data[difficulty]['total_questions'] += 1
+                difficulty_data[difficulty]['total_time'] += answer.timespent
+
+            except MCQ.DoesNotExist:
+                print(f"MCQ with ID {answer.mcq_uid} does not exist.")
+
+    # Calculate average time per difficulty
+    for difficulty, data in difficulty_data.items():
+        if data['total_questions'] > 0:
+            data['avg_time'] = round(data['total_time'] / data['total_questions'], 2)
+        else:
+            data['avg_time'] = 0  # Avoid division by zero if there are no questions for that difficulty
+        
+    return difficulty_data
+
+# View to render the HTML page
+def difficulty_vs_time_view(request, email_token):
+    # Get the difficulty data
+    difficulty_data = get_difficulty_data(request)
+
+    # Prepare context to pass to the template
+    context = {
+        'difficulty_data': difficulty_data
+    }
+
+    # Render the HTML template with the context data
+    return render(request, "graph/diff_vs_time.html", context)
+
+
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+from collections import defaultdict
+import json
+
+def type_vs_time(request, email_token):
+    # Get all submitted test sessions
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True)
+
+    # Initialize a dictionary to hold the total count of questions and the total time spent per type
+    type_data = defaultdict(lambda: {'total_questions': 0, 'total_time': 0})
+
+    # Loop through all test answers in the submitted test sessions
+    for session in test_sessions:
+        test_answers = TestAnswer.objects.filter(test_session=session, timespent__gt=0)  # Filter out timespent <= 0
+        for answer in test_answers:
+            # Retrieve the related MCQ for the current answer
+            mcq = MCQ.objects.filter(uid=answer.mcq_uid).first()
+            if mcq and mcq.types:
+                mcq_type = mcq.types.types  # Get the type of the question
+                # Update the total questions and total time spent on this type
+                type_data[mcq_type]['total_questions'] += 1
+                type_data[mcq_type]['total_time'] += answer.timespent
+
+    # Prepare the data for the frontend
+    labels = []  # Types of questions (e.g., Clinical, Image-Based, General)
+    total_questions = []  # Total number of questions for each type
+    avg_times = []  # Average time spent on each type (in seconds)
+
+    for mcq_type, data in type_data.items():
+        labels.append(mcq_type)
+        total_questions.append(data['total_questions'])
+        if data['total_questions'] > 0:
+            avg_times.append(data['total_time'] / data['total_questions'])  # Calculate average time
+        else:
+            avg_times.append(0)
+    
+    # Convert data to JSON format for use in the frontend
+    avg_times = [round(num, 2) for num in avg_times]
+    avg_time_st = json.dumps(avg_times, default=decimal_to_json)
+    
+    context = {
+        'labels': json.dumps(labels),
+        'total_questions': json.dumps(total_questions),
+        'avg_times': avg_time_st
+    }
+
+    # Render the HTML template and pass the context
+    return render(request, "graph/type_vs_time.html", context)
+
+
+def decimal_to_json(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)  # or str(obj) if you prefer
+    raise TypeError("Object of type Decimal is not JSON serializable")
+
+
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+from collections import defaultdict
+import json  # Don't forget to import json for the json.dumps function
+
+def diff_corr_incorr(request, email_token):
+    # Get all the test sessions where submitted=True
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True)
+
+    # Dictionary to track correct, incorrect, and not attempted answers by difficulty level
+    difficulty_data = defaultdict(lambda: {'correct': 0, 'incorrect': 0})
+    
+    # Variable to store not attempted counts (for future use)
+    not_attempted_count = defaultdict(int)
+
+    # Loop through each test session
+    for session in test_sessions:
+        # Get all answers for the current session
+        test_answers = TestAnswer.objects.filter(test_session=session)
+        
+        # Loop through each answer
+        for answer in test_answers:
+            try:
+                # Retrieve the corresponding MCQ using the UUID
+                mcq = MCQ.objects.get(pk=answer.mcq_uid)
+                difficulty_level = mcq.difficulty.name  # Get difficulty level name
+
+                # Count correct answers
+                if answer.correct:
+                    difficulty_data[difficulty_level]['correct'] += 1
+                # Count incorrect answers only if they were attempted
+                elif not answer.correct and answer.is_attempted:
+                    difficulty_data[difficulty_level]['incorrect'] += 1
+                # If the question was not attempted
+                elif not answer.is_attempted:
+                    not_attempted_count[difficulty_level] += 1
+
+            except MCQ.DoesNotExist:
+                # Handle case where the MCQ is missing
+                continue
+    print(not_attempted_count)
+    # Prepare data for frontend (labels and datasets for the chart)
+    labels = list(difficulty_data.keys())
+    correct_answers = [difficulty_data[difficulty]['correct'] for difficulty in labels]
+    incorrect_answers = [difficulty_data[difficulty]['incorrect'] for difficulty in labels]
+
+    # Pass the data to the template
+    context = {
+        'labels': json.dumps(labels),
+        'correct_answers': json.dumps(correct_answers),
+        'incorrect_answers': json.dumps(incorrect_answers),
+        # Not passing not_attempted_count to the template as requested
+    }
+
+    return render(request, 'graph/diff_corr_incorr.html', context)
+
+
+
+
+
+
+
+
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+from collections import defaultdict
+import json
+
+def type_corr_incorr(request, email_token):
+    # Get all the test sessions where submitted=True
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True)
+
+    # Dictionary to track correct, incorrect, and not attempted answers by MCQ type
+    mcq_type_data = defaultdict(lambda: {'correct': 0, 'incorrect': 0})
+    
+    # Variable to store not attempted counts (for future use)
+    not_attempted_count = defaultdict(int)
+
+    # Loop through each test session
+    for session in test_sessions:
+        # Get all answers for the current session
+        test_answers = TestAnswer.objects.filter(test_session=session)
+
+        # Loop through each answer
+        for answer in test_answers:
+            try:
+                # Retrieve the corresponding MCQ using the UUID
+                mcq = MCQ.objects.get(pk=answer.mcq_uid)
+                
+                # Check if mcq.types is not None before accessing its 'types' attribute
+                if mcq.types:
+                    mcq_type = mcq.types.types  # Get the MCQ type name
+
+                    # Count correct answers
+                    if answer.correct:
+                        mcq_type_data[mcq_type]['correct'] += 1
+                    # Count incorrect answers only if they were attempted
+                    elif not answer.correct and answer.is_attempted:
+                        mcq_type_data[mcq_type]['incorrect'] += 1
+                    # If the question was not attempted
+                    elif not answer.is_attempted:
+                        not_attempted_count[mcq_type] += 1
+
+            except MCQ.DoesNotExist:
+                # Handle case where the MCQ is missing
+                continue
+
+    # Prepare data for frontend (labels and datasets for the chart)
+    labels = list(mcq_type_data.keys())
+    correct_answers = [mcq_type_data[mcq_type]['correct'] for mcq_type in labels]
+    incorrect_answers = [mcq_type_data[mcq_type]['incorrect'] for mcq_type in labels]
+
+    # Pass the data to the template
+    context = {
+        'labels': json.dumps(labels),
+        'correct_answers': json.dumps(correct_answers),
+        'incorrect_answers': json.dumps(incorrect_answers),
+        # Not passing not_attempted_count to the template as requested
+    }
+
+    return render(request, 'graph/type_corr_incorr.html', context)
+
+def pom_sub_home(request,email_token):
+
+    subjects = Subject.objects.all().order_by('order')  # Fetch all subjects ordered by 'order'
+    return render(request, 'pom_sub_home/pom_sub_home.html', {'subjects': subjects})
+
+
+
+
+
+
+
+def performance_analysis_view(request, email_token):
+    # Get the subject from query parameters by name
+    subject_name = request.GET.get('subject')
+    if not subject_name:
+        return render(request, 'error.html', {'message': 'Subject not provided'})
+
+    try:
+        # Query the subject by name
+        subject = Subject.objects.get(name=subject_name)
+    except Subject.DoesNotExist:
+        return render(request, 'error.html', {'message': 'Subject not found'})
+
+    # Get all test sessions submitted by the user
+    user = request.user
+    test_sessions = TestSession.objects.filter(user=user, submitted=True)
+
+    # Get all the UUIDs of MCQs related to the selected subject via hierarchy
+    mcqs_in_subject = MCQ.objects.filter(topic__chapter__unit__subject=subject)
+    mcq_uuids = mcqs_in_subject.values_list('uid', flat=True)
+
+    # Filter test sessions to only include those that have MCQs from the subject
+    relevant_sessions = test_sessions.filter(testanswer__mcq_uid__in=mcq_uuids).distinct()
+
+    # Initialize counters for attempts, correct answers, and time spent by difficulty and type
+    attempts_by_difficulty = defaultdict(int)
+    correct_by_difficulty = defaultdict(int)
+    attempts_by_type = defaultdict(int)
+    correct_by_type = defaultdict(int)
+
+    total_time_by_difficulty = defaultdict(float)
+    count_by_difficulty = defaultdict(int)  # Count for average time calculation
+
+    total_time_by_type = defaultdict(float)
+    count_by_type = defaultdict(int)  # Count for average time calculation
+
+    # Get all TestAnswers for the user's relevant test sessions
+    test_answers = TestAnswer.objects.filter(test_session__in=relevant_sessions, mcq_uid__in=mcq_uuids)
+
+    # Analyze the test answers to categorize by difficulty and type
+    for answer in test_answers:
+        try:
+            mcq = MCQ.objects.get(uid=answer.mcq_uid)
+        except MCQ.DoesNotExist:
+            continue
+
+        # Count attempts and correct answers by difficulty
+        difficulty = mcq.difficulty.name if mcq.difficulty else 'Unknown'
+        attempts_by_difficulty[difficulty] += 1
+        if answer.correct:
+            correct_by_difficulty[difficulty] += 1
+
+        # Count attempts and correct answers by MCQ type
+        mcq_type = mcq.types.types if mcq.types else 'Unknown'
+        attempts_by_type[mcq_type] += 1
+        if answer.correct:
+            correct_by_type[mcq_type] += 1
+
+        # Calculate total time spent by difficulty and type (only if time spent > 0)
+        time_spent = float(answer.timespent)
+        if time_spent > 0:
+            total_time_by_difficulty[difficulty] += time_spent
+            count_by_difficulty[difficulty] += 1
+            total_time_by_type[mcq_type] += time_spent
+            count_by_type[mcq_type] += 1
+
+    # Prepare data for the charts
+    difficulty_levels = ['Easy', 'Medium', 'Tough']
+    mcq_types_labels = ['General', 'Clinical', 'Image']
+
+    # Build chart data arrays for attempts and correct answers
+    attempts_data_difficulty = [attempts_by_difficulty[level] for level in difficulty_levels]
+    correct_data_difficulty = [correct_by_difficulty[level] for level in difficulty_levels]
+
+    attempts_data_type = [attempts_by_type[type_label] for type_label in mcq_types_labels]
+    correct_data_type = [correct_by_type[type_label] for type_label in mcq_types_labels]
+
+    # Calculate average time spent per MCQ by difficulty and type
+    average_time_difficulty = [
+        total_time_by_difficulty[level] / count_by_difficulty[level] if count_by_difficulty[level] > 0 else 0
+        for level in difficulty_levels
+    ]
+
+    average_time_type = [
+        total_time_by_type[type_label] / count_by_type[type_label] if count_by_type[type_label] > 0 else 0
+        for type_label in mcq_types_labels
+    ]
+
+    # Subject-wise performance data for the line chart
+    performance_data = []
+
+    for session in relevant_sessions:
+        # Get TestAnswers for this session
+        session_answers = TestAnswer.objects.filter(test_session=session)
+
+        # Filter MCQs related to the subject
+        mcqs = MCQ.objects.filter(uid__in=session_answers.values_list('mcq_uid', flat=True), topic__chapter__unit__subject=subject)
+        
+        total_mcqs = mcqs.count()
+        correct_mcqs = session_answers.filter(correct=True, mcq_uid__in=mcqs.values_list('uid', flat=True)).count()
+
+        accuracy_percentage = (correct_mcqs / total_mcqs * 100) if total_mcqs > 0 else 0
+        performance_data.append({
+            'session': session.test_id,
+            'accuracy': accuracy_percentage
+        })
+
+    # Group performance data
+    grouped_data = group_performance_data(performance_data)
+
+    # Pass all the data to the template for rendering the charts
+    context = {
+        'attempts_data_difficulty': attempts_data_difficulty,
+        'correct_data_difficulty': correct_data_difficulty,
+        'attempts_data_type': attempts_data_type,
+        'correct_data_type': correct_data_type,
+        'average_time_difficulty': average_time_difficulty,  # Average time by difficulty for chart
+        'average_time_type': average_time_type,  # Average time by type for chart
+        'performance_data': grouped_data,  # Line chart data for subject-wise performance
+    }
+
+    return render(request, 'pom_sub_home/pom_sub_ana.html', context)
+
+
+def group_performance_data(performance_data):
+    # Sort the data by session ID
+    performance_data.sort(key=lambda x: x['session'])
+    
+    # Determine group size
+    total_sessions = len(performance_data)
+    if total_sessions < 5:
+        group_size = 1
+    elif total_sessions <= 10:
+        group_size = 2
+    elif total_sessions <= 20:
+        group_size = 4
+    else:
+        group_size = 10
+    
+    # Group data and calculate average accuracy for each group
+    grouped_data = []
+    num_groups = (total_sessions + group_size - 1) // group_size  # Calculate number of groups
+    
+    for i in range(num_groups):
+        group = performance_data[i * group_size:(i + 1) * group_size]
+        average_accuracy = sum(item['accuracy'] for item in group) / len(group) if group else 0
+        group_label = f"Test {i * group_size + 1}-{min((i + 1) * group_size, total_sessions)}"
+        grouped_data.append({
+            'label': group_label,
+            'accuracy': average_accuracy
+        })
+    
+    return grouped_data
+
+from django.shortcuts import render
+from mcqs.models import TestSession
+
+def custome_ana_view(request, email_token):
+    # Fetch all submitted TestSession records, ordered from newest to oldest
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True).order_by('-created_at')
+    if request.user.is_authenticated:
+       
+        if email_token==request.user.profile.email_token:
+            data = {}
+
+            subjects = Subject.objects.all()
+            for subject in subjects:
+                units = Unit.objects.filter(subject=subject)
+                data[subject.name] = {}
+
+                for unit in units:
+                    chapters = Chapter.objects.filter(unit=unit)
+                    data[subject.name][unit.name] = {}
+
+                    for chapter in chapters:
+                        topics = Topic.objects.filter(chapter=chapter)
+                        data[subject.name][unit.name][chapter.name] = [topic.name for topic in topics]
+
+            
+    context = {
+        'test_sessions': test_sessions,
+        'data': data
+    }
+    
+    return render(request, 'pom_cus/pom_cus_home.html', context)
+    from django.http import HttpResponse  # Make sure to import HttpResponse
+
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from mcqs.models import TestSession, TestAnswer, MCQ
+
+def test_wise_parti(request, email_token):
+    # Fetch the test_id from the request
+    test_id = request.GET.get('test_id')
+
+    # Fetch the test session for the current user using the test_id
+    test_session = get_object_or_404(TestSession, test_id=test_id, user=request.user)
+    test_session.timetaken_minutes = round(test_session.timetaken / 60, 2)
+    # Fetch all test answers related to this test session
+    test_answers = TestAnswer.objects.filter(test_session=test_session)
+
+    # Prepare a list to hold the detailed analysis for each question
+    question_data = []
+
+    # Loop through each test answer
+    for answer in test_answers:
+        # Fetch the corresponding MCQ using the mcq_uid
+        mcq = get_object_or_404(MCQ, uid=answer.mcq_uid)
+
+        # Build the hierarchy of subject -> unit -> chapter -> topic
+        topic = mcq.topic
+        chapter = topic.chapter
+        unit = chapter.unit
+        subject = unit.subject
+        hierarchy = f"{subject.name} - Unit {unit.name} - Chapter {chapter.name} - Topic {topic.name}"
+
+        # Determine the question status based on `correct` and `is_attempted` fields
+        if answer.correct:
+            is_correct = True
+            is_attempted = True
+        elif not answer.is_attempted:
+            is_correct = False
+            is_attempted = False
+        else:
+            is_correct = False
+            is_attempted = True
+
+        # Prepare the data for this question
+        question_details = {
+            'question_text': mcq.text,
+            'options': [mcq.option_1, mcq.option_2, mcq.option_3, mcq.option_4],
+            'correct_option': mcq.correct_option,
+            'explanation': mcq.explanation,
+            'image': mcq.image.url if mcq.image else None,
+            'hierarchy': hierarchy,
+            'difficulty': mcq.difficulty.name if mcq.difficulty else "Unknown",
+            'type': mcq.types.types if mcq.types else "Unknown",
+            'user_answer': answer.selected_optiontext,
+            'is_correct': is_correct,
+            'is_attempted': is_attempted,
+            'time_spent':answer.timespent
+        }
+
+        # Append the data to the question_data list
+        question_data.append(question_details)
+
+    # Prepare context for the template
+    context = {
+        'test_session': test_session,
+        'questions': question_data,
+    }
+
+    # Render the template with the context data
+    return render(request, 'pom_cus/pom_cus_test_wise.html', context)
+
+
+
+
+
+
+from django.http import JsonResponse
+from mcqs.models import Subject, Unit, Chapter, Topic
+
+def get_units(request):
+    subject_id = request.GET.get('subject_id')
+    units = Unit.objects.filter(subject_id=subject_id).order_by('order')
+    units_data = [{'id': unit.id, 'name': unit.name} for unit in units]
+    return JsonResponse(units_data, safe=False)
+
+def get_chapters(request):
+    unit_id = request.GET.get('unit_id')
+    chapters = Chapter.objects.filter(unit_id=unit_id).order_by('order')
+    chapters_data = [{'id': chapter.id, 'name': chapter.name} for chapter in chapters]
+    return JsonResponse(chapters_data, safe=False)
+
+def get_topics(request):
+    chapter_id = request.GET.get('chapter_id')
+    topics = Topic.objects.filter(chapter_id=chapter_id).order_by('order')
+    topics_data = [{'id': topic.id, 'name': topic.name} for topic in topics]
+    return JsonResponse(topics_data, safe=False)
+
+
+
+
+
+from django.shortcuts import render
+from mcqs.models import TestSession, TestAnswer, MCQ
+from collections import defaultdict
+import json
+
+def pom_cus_cus(request, email_token):
+    # Get user and query parameters
+    user = request.user
+    subject_name = request.GET.get('subject')
+    unit_name = request.GET.get('unit')
+    chapter_name = request.GET.get('chapter', None)
+    topic_name = request.GET.get('topic', None)
+
+    # Filter MCQs based on subject, unit, and optionally chapter and topic
+    mcqs = MCQ.objects.filter(topic__chapter__unit__subject__name=subject_name,
+                              topic__chapter__unit__name=unit_name)
+    if chapter_name:
+        mcqs = mcqs.filter(topic__chapter__name=chapter_name)
+    if topic_name:
+        mcqs = mcqs.filter(topic__name=topic_name)
+    mcq_ids = mcqs.values_list('uid', flat=True)  # Get the MCQ IDs
+
+    # Get all relevant test sessions for the user
+    test_sessions = TestSession.objects.filter(user=user, submitted=True)
+
+    # For Performance Over Time (Line Chart)
+    session_data = []
+    for session in test_sessions:
+        answers = TestAnswer.objects.filter(test_session=session, mcq_uid__in=mcq_ids)
+        if answers.exists():
+            total_questions = len(answers)
+            correct_answers = answers.filter(correct=True).count()
+            accuracy = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
+            session_data.append({
+                'session': session,
+                'accuracy': accuracy
+            })
+
+    # Sort session data by test session creation date
+    session_data.sort(key=lambda x: x['session'].created_at)
+    total_sessions = len(session_data)
+
+    # Group sessions and calculate average accuracy for performance chart
+    if total_sessions < 5:
+        accuracy_data = [{'label': f'Test {i + 1}', 'accuracy': data['accuracy']} for i, data in enumerate(session_data)]
+    else:
+        if total_sessions <= 10:
+            group_size = 2
+        elif total_sessions <= 20:
+            group_size = 4
+        else:
+            group_size = 10
+        grouped_data = []
+        num_groups = (total_sessions + group_size - 1) // group_size
+        for i in range(num_groups):
+            group = session_data[i * group_size:(i + 1) * group_size]
+            avg_accuracy = sum(item['accuracy'] for item in group) / len(group) if group else 0
+            group_label = f"Test {i * group_size + 1}-{min((i + 1) * group_size, total_sessions)}"
+            grouped_data.append({
+                'label': group_label,
+                'accuracy': avg_accuracy
+            })
+        accuracy_data = grouped_data
+
+    # For Attempts by Type and Difficulty (Pie Charts)
+    attempts_by_type = defaultdict(int)
+    correct_by_type = defaultdict(int)
+    attempts_by_difficulty = defaultdict(int)
+    correct_by_difficulty = defaultdict(int)
+
+    # For Average Time by Type and Difficulty (New Feature)
+    time_by_type = defaultdict(list)
+    time_by_difficulty = defaultdict(list)
+
+    for session in test_sessions:
+        answers = TestAnswer.objects.filter(test_session=session, mcq_uid__in=mcq_ids)
+        for answer in answers:
+            mcq = MCQ.objects.filter(uid=answer.mcq_uid).first()
+            if mcq:
+                # Track attempts and correctness by type and difficulty
+                if mcq.types:
+                    question_type = mcq.types.types
+                    attempts_by_type[question_type] += 1
+                    if answer.correct:
+                        correct_by_type[question_type] += 1
+                    if answer.timespent > 0:
+                        time_by_type[question_type].append(answer.timespent)
+
+                if mcq.difficulty:
+                    difficulty = mcq.difficulty.name
+                    attempts_by_difficulty[difficulty] += 1
+                    if answer.correct:
+                        correct_by_difficulty[difficulty] += 1
+                    if answer.timespent > 0:
+                        time_by_difficulty[difficulty].append(answer.timespent)
+
+    # Calculate average time spent by type and difficulty
+    average_time_data = {
+    'General': float(sum(time_by_type['General'])) / len(time_by_type['General']) if time_by_type['General'] else 0,
+    'Image': float(sum(time_by_type['Image'])) / len(time_by_type['Image']) if time_by_type['Image'] else 0,
+    'Clinical': float(sum(time_by_type['Clinical'])) / len(time_by_type['Clinical']) if time_by_type['Clinical'] else 0,
+    # Add for difficulties as well
+    'Easy': float(sum(time_by_difficulty['Easy'])) / len(time_by_difficulty['Easy']) if time_by_difficulty['Easy'] else 0,
+    'Medium': float(sum(time_by_difficulty['Medium'])) / len(time_by_difficulty['Medium']) if time_by_difficulty['Medium'] else 0,
+    'Tough': float(sum(time_by_difficulty['Tough'])) / len(time_by_difficulty['Tough']) if time_by_difficulty['Tough'] else 0,
+}
+    # Prepare data for the frontend (attempts and accuracy for type & difficulty)
+    type_labels = ['General', 'Image', 'Clinical']
+    difficulty_labels = ['Easy', 'Medium', 'Tough']
+
+    attempts_data_type = [attempts_by_type[label] for label in type_labels]
+    correct_data_type = [correct_by_type[label] for label in type_labels]
+    attempts_data_difficulty = [attempts_by_difficulty[label] for label in difficulty_labels]
+    correct_data_difficulty = [correct_by_difficulty[label] for label in difficulty_labels]
+
+    context = {
+        'subject_name': subject_name,
+        'unit_name': unit_name,
+        'chapter_name': chapter_name,
+        'topic_name': topic_name,
+        # Performance data
+        'accuracy_data': json.dumps(accuracy_data),
+        # Attempts by Type & Difficulty
+        'attempts_data_type': json.dumps(attempts_data_type),
+        'correct_data_type': json.dumps(correct_data_type),
+        'attempts_data_difficulty': json.dumps(attempts_data_difficulty),
+        'correct_data_difficulty': json.dumps(correct_data_difficulty),
+        # Average time per type and difficulty
+         'average_time_data': json.dumps(average_time_data)
+    }
+
+    return render(request, 'pom_cus/pom_cus_cus.html', context)
+
+from django.db.models import Count, Q, Avg
+from django.shortcuts import render
+from decimal import Decimal
+from mcqs.models import TestSession, TestAnswer, Topic, MCQ, Subject, Unit, Chapter, difficulties, mcq_types
+
+def pom_cus_top_comp(request, email_token):
+    # Get the subject, unit, and chapter from the GET parameters
+    subject_name = request.GET.get('subject')
+    unit_name = request.GET.get('unit')
+    chapter_name = request.GET.get('chapter')
+
+    # Fetch subject, unit, and chapter
+    try:
+        subject = Subject.objects.get(name=subject_name)
+        unit = Unit.objects.get(name=unit_name, subject=subject)
+        chapter = Chapter.objects.get(name=chapter_name, unit=unit)
+    except (Subject.DoesNotExist, Unit.DoesNotExist, Chapter.DoesNotExist):
+        return render(request, 'error.html', {'message': 'Invalid Subject, Unit, or Chapter'})
+
+    # Fetch all submitted test sessions for the user
+    test_sessions = TestSession.objects.filter(user=request.user, submitted=True)
+
+    # Fetch all test answers from the user's submitted test sessions
+    test_answers = TestAnswer.objects.filter(test_session__in=test_sessions)
+
+    # Fetch all topics related to the chapter
+    topics = Topic.objects.filter(chapter=chapter)
+
+    # Initialize data lists for topic-wise stats
+    topic_labels = []
+    total_faced_data = []
+    correct_data = []
+    incorrect_data = []
+    not_attempted_data = []
+
+    # Get all difficulty levels and MCQ types dynamically from the models
+    all_difficulties = difficulties.objects.all()
+    all_mcq_types = mcq_types.objects.all()
+
+    # Initialize data structure for difficulty-wise and type-wise stats
+    difficulty_stats = {difficulty.name: {'total_faced': [], 'correct': [], 'incorrect': [], 'not_attempted': [], 'average_time': []}
+                        for difficulty in all_difficulties}
+    type_stats = {mcq_type.types: {'total_faced': [], 'correct': [], 'incorrect': [], 'not_attempted': [], 'average_time': []}
+                  for mcq_type in all_mcq_types}
+
+    # Iterate over each topic in the chapter
+    for topic in topics:
+        # Get MCQs under the current topic
+        mcqs = MCQ.objects.filter(topic=topic)
+
+        # Test answers related to the MCQs of the current topic
+        answers = test_answers.filter(mcq_uid__in=mcqs.values_list('uid', flat=True))
+
+        # Total questions faced in this topic
+        total_faced = answers.count()
+
+        # Correct answers in this topic
+        correct = answers.filter(correct=True).count()
+
+        # Incorrect answers in this topic (attempted but incorrect)
+        incorrect = answers.filter(Q(correct=False) & Q(is_attempted=True)).count()
+
+        # Not attempted questions in this topic
+        not_attempted = answers.filter(is_attempted=False).count()
+
+        # Append data for this topic (topic-wise stats)
+        topic_labels.append(topic.name)
+        total_faced_data.append(total_faced)
+        correct_data.append(correct)
+        incorrect_data.append(incorrect)
+        not_attempted_data.append(not_attempted)
+
+        # For each difficulty level, gather test answer stats including average time spent
+        for difficulty in all_difficulties:
+            # Get the MCQs with this difficulty level under the current topic
+            mcqs_for_difficulty = mcqs.filter(difficulty=difficulty)
+
+            # Get the test answers for these MCQs
+            answers_for_difficulty = test_answers.filter(mcq_uid__in=mcqs_for_difficulty.values_list('uid', flat=True))
+
+            # Exclude answers where time_spent is 0 before calculating average time
+            answers_for_difficulty_with_time = answers_for_difficulty.exclude(timespent=0)
+
+            # Calculate total faced, correct, incorrect, not attempted, and average time spent
+            total_faced_difficulty = answers_for_difficulty.count()
+            correct_difficulty = answers_for_difficulty.filter(correct=True).count()
+            incorrect_difficulty = answers_for_difficulty.filter(Q(correct=False) & Q(is_attempted=True)).count()
+            not_attempted_difficulty = answers_for_difficulty.filter(is_attempted=False).count()
+            average_time_difficulty = answers_for_difficulty_with_time.aggregate(average_time=Avg('timespent'))['average_time'] or Decimal('0')
+
+            # Convert to string for JavaScript
+            difficulty_stats[difficulty.name]['total_faced'].append(total_faced_difficulty)
+            difficulty_stats[difficulty.name]['correct'].append(correct_difficulty)
+            difficulty_stats[difficulty.name]['incorrect'].append(incorrect_difficulty)
+            difficulty_stats[difficulty.name]['not_attempted'].append(not_attempted_difficulty)
+            difficulty_stats[difficulty.name]['average_time'].append(str(average_time_difficulty))
+
+        # For each MCQ type, gather test answer stats including average time spent
+        for mcq_type in all_mcq_types:
+            # Get the MCQs of this type under the current topic
+            mcqs_for_type = mcqs.filter(types=mcq_type)
+
+            # Get the test answers for these MCQs
+            answers_for_type = test_answers.filter(mcq_uid__in=mcqs_for_type.values_list('uid', flat=True))
+
+            # Exclude answers where time_spent is 0 before calculating average time
+            answers_for_type_with_time = answers_for_type.exclude(timespent=0)
+
+            # Calculate total faced, correct, incorrect, not attempted, and average time spent
+            total_faced_type = answers_for_type.count()
+            correct_type = answers_for_type.filter(correct=True).count()
+            incorrect_type = answers_for_type.filter(Q(correct=False) & Q(is_attempted=True)).count()
+            not_attempted_type = answers_for_type.filter(is_attempted=False).count()
+            average_time_type = answers_for_type_with_time.aggregate(average_time=Avg('timespent'))['average_time'] or Decimal('0')
+
+            # Convert to string for JavaScript
+            type_stats[mcq_type.types]['total_faced'].append(total_faced_type)
+            type_stats[mcq_type.types]['correct'].append(correct_type)
+            type_stats[mcq_type.types]['incorrect'].append(incorrect_type)
+            type_stats[mcq_type.types]['not_attempted'].append(not_attempted_type)
+            type_stats[mcq_type.types]['average_time'].append(str(average_time_type))
+
+    # Pass the data to the template for rendering (topic-wise, difficulty-wise, type-wise stats, and average time)
+    context = {
+        'topic_labels': topic_labels,
+        'total_faced_data': total_faced_data,
+        'correct_data': correct_data,
+        'incorrect_data': incorrect_data,
+        'not_attempted_data': not_attempted_data,
+        'difficulty_stats': difficulty_stats,
+        'type_stats': type_stats,
+    }
+
+    return render(request, 'pom_cus/pom_cus_top_comp.html', context)
+
+
+

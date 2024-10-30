@@ -169,65 +169,54 @@ def accuracy_vs_tests(request, email_token):
 
 
 from django.shortcuts import render
-from mcqs.models import Subject, MCQ, TestAnswer, Topic, Unit
-import uuid
+from mcqs.models import Subject, MCQ, TestAnswer
+from django.db.models import Count
 
 def analysis_view_sub_acc(request, email_token):
-    # Fetch all MCQ UIDs from submitted TestSessions as strings
-    submitted_mcq_uids = TestAnswer.objects.filter(
+    # Step 1: Filter TestAnswers for the current user's submitted sessions
+    user_submitted_answers = TestAnswer.objects.filter(
         test_session__submitted=True,
         test_session__user=request.user
-    ).values_list('mcq_uid', flat=True).distinct()
-
-    # Fetch MCQs that are associated with these UIDs
-    related_mcqs = MCQ.objects.filter(uid__in=submitted_mcq_uids)  # `uid` is string
-
-    # Fetch Topics related to these MCQs
-    related_topics = Topic.objects.filter(
-        uid__in=related_mcqs.values_list('topic__uid', flat=True)  # `uid` is string
+    )
+    
+    # Step 2: Get all unique MCQ UIDs from the user's submitted answers
+    user_mcq_uids = user_submitted_answers.values_list('mcq_uid', flat=True).distinct()
+    
+    # Step 3: Get all MCQs based on these UIDs
+    related_mcqs = MCQ.objects.filter(uid__in=user_mcq_uids)
+    
+    # Step 4: Get related Subjects by accessing the chain of relationships
+    subjects = Subject.objects.filter(
+        units__chapters__topics__in=related_mcqs.values_list('topic', flat=True)
     ).distinct()
 
-    # Fetch Units related to these Topics
-    related_units = Unit.objects.filter(
-        chapters__topics__in=related_topics
-    ).distinct()
-
-    # Fetch Subjects related to these Units
-    submitted_subjects = Subject.objects.filter(
-        units__in=related_units
-    ).distinct()
-
-    labels = [subject.name for subject in submitted_subjects]
-
-    # Prepare data lists
+    # Prepare lists for chart data
+    labels = []
     attempted = []
     correct = []
 
-    for subject in submitted_subjects:
-        # Fetch MCQ UIDs related to this subject
-        mcq_uids = MCQ.objects.filter(topic__chapter__unit__subject=subject).values_list('uid', flat=True)
-
-        # Total number of attempts for the subject
-        attempts_count = TestAnswer.objects.filter(
-            mcq_uid__in=mcq_uids,
-            test_session__submitted=True
-        ).count()
-
-        # Correct answers count
-        correct_count = TestAnswer.objects.filter(
-            mcq_uid__in=mcq_uids,
-            correct=True,
-            test_session__submitted=True
-        ).count()
-
+    for subject in subjects:
+        # Get all MCQs related to this subject
+        subject_mcqs = MCQ.objects.filter(topic__chapter__unit__subject=subject).values_list('uid', flat=True)
+        
+        # Count attempts for the current user on MCQs related to this subject
+        attempts_count = user_submitted_answers.filter(mcq_uid__in=subject_mcqs).count()
+        
+        # Count correct answers for the current user on MCQs related to this subject
+        correct_count = user_submitted_answers.filter(mcq_uid__in=subject_mcqs, correct=True).count()
+        
+        # Add data to lists
+        labels.append(subject.name)
         attempted.append(attempts_count)
         correct.append(correct_count)
 
+    # Render data to the template
     context = {
         'labels': labels,
         'attempted': attempted,
         'correct': correct,
     }
+    
     return render(request, 'graph/sub_acc.html', context)
 
 

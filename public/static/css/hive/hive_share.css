@@ -1,0 +1,231 @@
+/* Global reset and box-sizing */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Overall body styling */
+body {
+    
+    background-color: #121212; /* Black background for dark theme */
+    color: #EAEAEA; /* Light text color for better readability */
+    line-height: 1.6;
+}
+
+/* Chat Container */
+.chat-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #1E1E1E; /* Dark gray for subtle contrast */
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); /* Soft shadow */
+    border: 1px solid #333; /* Subtle border for structure */
+}
+nav{
+    background:#282828;}
+a.active, a:hover {
+        background: #4d4c4c;
+        transition: .5s;
+    }
+footer {
+        background-color: #222;
+        color: #f4b400;
+        text-align: center;
+        padding: 10px;
+    }
+/* Chat Header */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.chat-header h2 {
+    font-size: 1.5em;
+    color: #FFD700; /* Light yellow for headings */
+    font-weight: 600;
+}
+
+.back-btn {
+    background-color: #FFD700; /* Light yellow button */
+    color: #121212; /* Dark text for readability */
+    text-decoration: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.back-btn:hover {
+    background-color: #FFCC00; /* Slightly lighter yellow on hover */
+}
+
+/* Chat Messages Area */
+.chat-messages {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+    border-top: 1px solid #333;
+}
+
+/* Individual Message */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #1A1A1A; /* Very dark gray for message background */
+    position: relative;
+    transition: transform 0.2s ease-in-out;
+}
+
+.message:hover {
+    transform: translateY(-5px); /* Subtle lift on hover */
+}
+
+/* Sent Message */
+.message-sent {
+    background-color: #fdf9e5; /* Light yellow for sent messages */
+    color: #121212; /* Dark text for readability */
+    align-self: flex-end;
+}
+
+/* Received Message */
+.message-received {
+    background-color: #2C2C2C; /* Slightly lighter dark gray for received messages */
+    color: #EAEAEA;
+    align-self: flex-start;
+}
+
+/* Sender/Receiver Name and Date/Time */
+.message-sent .sender,
+.message-received .sender {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #BBBBBB; /* Light gray for metadata */
+}
+
+.message .time {
+    font-size: 0.8em;
+    text-align: right;
+    color: #999; /* Even lighter for date/time */
+    margin-top: 8px;
+}
+
+/* MCQ Styling */
+.mcq-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.mcq-image img {
+    max-width: 100%;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.mcq-options {
+    list-style-type: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.mcq-option {
+    background-color: #333333; /* Dark option background */
+    padding: 12px;
+    border-radius: 5px;
+    margin: 5px 0;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    color: #FFFFFF;
+}
+
+.mcq-option:hover {
+    background-color: #555555; /* Lighter gray on hover */
+}
+
+/* Correct and Incorrect Options */
+.correct {
+    background-color: #28a745; /* Green for correct answers */
+    color: #FFFFFF;
+}
+
+.incorrect {
+    background-color: #dc3545; /* Red for incorrect answers */
+    color: #FFFFFF;
+}
+
+/* MCQ Explanation */
+.mcq-explanation {
+    background-color: #1E1E1E; /* Dark explanation background */
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    color: #EAEAEA;
+    font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chat-container {
+        padding: 15px;
+    }
+
+    .chat-header h2 {
+        font-size: 1.2em; /* Adjust header size */
+    }
+
+    .back-btn {
+        padding: 6px 14px; /* Adjust button padding */
+    }
+
+    .mcq-option {
+        padding: 10px; /* Adjust option padding */
+    }
+
+    .mcq-explanation {
+        font-size: 0.85em; /* Smaller explanation text */
+    }
+    nav ul{
+        background:#181818;
+    }
+    a:hover, a.active {
+        
+        color: #ffffff;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-container {
+        margin: 10px;
+        padding: 10px;
+    }
+
+    .chat-header h2 {
+        font-size: 1.1em; /* Further adjust header size */
+    }
+
+    .back-btn {
+        font-size: 0.8em; /* Smaller button font */
+    }
+    nav ul{
+        background:#181818;
+    }
+    a:hover, a.active {
+        
+        color: #ffffff;
+    }
+    .message {
+        padding: 10px;
+    }
+}

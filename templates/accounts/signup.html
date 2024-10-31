@@ -1,0 +1,55 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Home-Register{% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="/media/css/signup.css">
+<div class="signup-container">
+    <div class="signup-box">
+        <h2>Register Here</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {% include "base/alert.html" %}
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name">
+            </div>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username">
+                <small id="usernameFeedback" style="color: red; display: none;">
+                    Username cannot contain spaces, uppercase letters, or special characters.
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <button type="submit">Signup</button>
+            <p>Already have an account? <a href="login">Login</a></p>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('username').addEventListener('input', function() {
+    const username = this.value;
+    const feedback = document.getElementById('usernameFeedback');
+    const isValid = /^[a-z0-9]+$/.test(username); // Only lowercase letters and numbers
+
+    if (!isValid) {
+        feedback.style.display = 'block';
+    } else {
+        feedback.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

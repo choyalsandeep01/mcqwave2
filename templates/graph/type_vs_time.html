@@ -1,0 +1,138 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <link rel="stylesheet" href="/media/css/type_vs_time.css">
+    <h1>Total Questions(attempted)  and Average Time per Type</h1>
+    <div class="chart-container">
+        <canvas id="questionsVsTimeChart"></canvas>
+    </div>
+
+    <!-- Pass data from Django to JavaScript -->
+    <script id="labels" type="application/json">{{ labels|safe }}</script>
+    <script id="totalQuestions" type="application/json">{{ total_questions|safe }}</script>
+    <script id="avgTimes" type="application/json">{{ avg_times|safe }}</script>
+
+    <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        // Get data from Django context
+const labels = JSON.parse(document.getElementById('labels').textContent);
+const totalQuestions = JSON.parse(document.getElementById('totalQuestions').textContent);
+const avgTimes = JSON.parse(document.getElementById('avgTimes').textContent);
+
+const ctx = document.getElementById('questionsVsTimeChart').getContext('2d');
+
+const data = {
+    labels: labels,
+    datasets: [
+        {
+            label: 'Total Questions',
+            data: totalQuestions,
+            type: 'bar', // Display total questions as a bar
+            backgroundColor: 'rgba(75, 192, 192, 0.5)', // Bar color
+            yAxisID: 'y1',
+        },
+        {
+            label: 'Average Time Spent (seconds)',
+            data: avgTimes,
+            borderColor: 'rgba(54, 162, 235, 1)', // Line color
+            backgroundColor: 'rgba(54, 162, 235, 0.2)', // Fill under the line
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointRadius: 5,
+            yAxisID: 'y2', // Separate axis for the average time
+        }
+    ]
+};
+
+// Configuration options for the combined chart
+const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+        x: {
+            title: {
+                display: true,
+                text: 'Question Types',
+                font: {
+                    size: 14
+                }
+            },
+            grid: {
+                display: false
+            }
+        },
+        y1: {
+            beginAtZero: true,
+            position: 'left',
+            title: {
+                display: true,
+                text: 'Total Questions',
+                font: {
+                    size: 14
+                }
+            },
+            grid: {
+                drawOnChartArea: false, // Only draw grid for one axis
+            },
+        },
+        y2: {
+            beginAtZero: true,
+            position: 'right',
+            title: {
+                display: true,
+                text: 'Average Time (seconds)',
+                font: {
+                    size: 14
+                }
+            }
+        }
+    },
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: function (context) {
+                    return `${context.dataset.label}: ${context.raw}`;
+                }
+            }
+        },
+        legend: {
+            display: true,
+            labels: {
+                font: {
+                    size: 14
+                }
+            }
+        }
+    },
+    elements: {
+        point: {
+            hoverRadius: 6,
+            radius: 4
+        }
+    }
+};
+
+// Initialize the combined chart
+const questionsVsTimeChart = new Chart(ctx, {
+    type: 'line', // Use line chart as base
+    data: data,
+    options: options
+});
+
+    </script>
+    {% endblock %}
+
+    {% block pp %}
+      <li class="dropdown">
+        <a href="javascript:void(0)" class="dropbtn">
+          <i class="fas fa-user-circle profile-icon"></i>
+          {{ user.username }}
+        </a>
+        <div class="dropdown-content">
+          <a href="#">Settings</a>
+          <a href="{% url 'logout' %}">Logout</a>
+        </div>
+      </li>
+    {% endblock %}

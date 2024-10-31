@@ -736,36 +736,61 @@ def test_wise_parti(request, email_token):
     # Fetch the test session for the current user using the test_id
     test_session = get_object_or_404(TestSession, test_id=test_id, user=request.user)
     test_session.timetaken_minutes = round(test_session.timetaken / 60, 2)
-    # Fetch all test answers related to this test session
     test_answers = TestAnswer.objects.filter(test_session=test_session)
 
-    # Prepare a list to hold the detailed analysis for each question
     question_data = []
+    total_correct = total_incorrect = total_not_attempted = 0
+    type_counts = {"clinical": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0},
+                   "image": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0},
+                   "general": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0}}
+    difficulty_counts = {"easy": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0},
+                         "medium": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0},
+                         "tough": {"correct": 0, "incorrect": 0, "not_attempted": 0, "total": 0}}
 
-    # Loop through each test answer
+    # Loop through each test answer to calculate counts for analysis
     for answer in test_answers:
-        # Fetch the corresponding MCQ using the mcq_uid
         mcq = get_object_or_404(MCQ, uid=answer.mcq_uid)
 
-        # Build the hierarchy of subject -> unit -> chapter -> topic
         topic = mcq.topic
         chapter = topic.chapter
         unit = chapter.unit
         subject = unit.subject
         hierarchy = f"{subject.name} - Unit {unit.name} - Chapter {chapter.name} - Topic {topic.name}"
 
-        # Determine the question status based on `correct` and `is_attempted` fields
-        if answer.correct:
-            is_correct = True
-            is_attempted = True
-        elif not answer.is_attempted:
-            is_correct = False
-            is_attempted = False
-        else:
-            is_correct = False
-            is_attempted = True
+        is_correct = answer.correct
+        is_attempted = answer.is_attempted
 
-        # Prepare the data for this question
+        # Count for total questions
+        if is_correct:
+            total_correct += 1
+        elif is_attempted:
+            total_incorrect += 1
+        else:
+            total_not_attempted += 1
+
+        # Type-wise counts
+        mcq_type = mcq.types.types.lower() if mcq.types else "gen"
+        if mcq_type in type_counts:
+            type_counts[mcq_type]["total"] += 1  # Count total questions for the type
+            if is_correct:
+                type_counts[mcq_type]["correct"] += 1
+            elif is_attempted:
+                type_counts[mcq_type]["incorrect"] += 1
+            else:
+                type_counts[mcq_type]["not_attempted"] += 1
+
+        # Difficulty-level counts
+        difficulty_level = mcq.difficulty.name.lower() if mcq.difficulty else "medium"
+        if difficulty_level in difficulty_counts:
+            difficulty_counts[difficulty_level]["total"] += 1  # Count total questions for the difficulty
+            if is_correct:
+                difficulty_counts[difficulty_level]["correct"] += 1
+            elif is_attempted:
+                difficulty_counts[difficulty_level]["incorrect"] += 1
+            else:
+                difficulty_counts[difficulty_level]["not_attempted"] += 1
+
+        # Question data for template
         question_details = {
             'question_text': mcq.text,
             'options': [mcq.option_1, mcq.option_2, mcq.option_3, mcq.option_4],
@@ -778,19 +803,21 @@ def test_wise_parti(request, email_token):
             'user_answer': answer.selected_optiontext,
             'is_correct': is_correct,
             'is_attempted': is_attempted,
-            'time_spent':answer.timespent
+            'time_spent': answer.timespent
         }
-
-        # Append the data to the question_data list
         question_data.append(question_details)
 
-    # Prepare context for the template
+    # Prepare context with question data and analysis counts
     context = {
         'test_session': test_session,
         'questions': question_data,
+        'total_correct': total_correct,
+        'total_incorrect': total_incorrect,
+        'total_not_attempted': total_not_attempted,
+        'type_counts': type_counts,
+        'difficulty_counts': difficulty_counts,
     }
 
-    # Render the template with the context data
     return render(request, 'pom_cus/pom_cus_test_wise.html', context)
 
 

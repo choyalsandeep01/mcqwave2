@@ -151,4 +151,4 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'travelphoto85@gmail.com'
 EMAIL_HOST_PASSWORD = 'dtlxsqpoacwhmbzw'
-
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

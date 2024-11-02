@@ -70,10 +70,23 @@ def test(request, email_token):
     
     selections_json = request.GET.get('selections')
     selections = json.loads(selections_json) if selections_json else []
+    if not selections:
+        messages.error(request, "Please add selections by clicking on 'Add Selection' after making your choices.")
+        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
     question_type = request.GET.get('questionType').title()
     difficulty_level = request.GET.get('difficultyLevel').title()
-    num_mcqs = int(request.GET.get('num_mcqs', 25))
+    num_mcqs_str = request.GET.get('numQuestions', '25')  # Use a string '25' as the default
+    num_mcqs = int(num_mcqs_str) if num_mcqs_str.isdigit() else 25
     
+
+    
+
+    # Alert if number of questions requested exceeds 40
+    if num_mcqs > 40:
+        messages.error(request, "You cannot select more than 40 questions.")
+        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
+
+
     selections_data = []
 
     # Step 1: Build queries for each selection
@@ -115,6 +128,12 @@ def test(request, email_token):
     random.shuffle(filtered_mcqs)  # Powerful shuffle for variety
     print("filtered:",len(filtered_mcqs))
     # Step 3: Calculate inverse weight and allocate MCQs by selection parts
+
+    if len(filtered_mcqs) == 0:
+        messages.error(request, "No MCQs found with the current selections and filters. Please adjust your criteria.")
+        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
+
+
     inverse_parts_count_sum = sum(1 / data['parts_count'] for data in selections_data)
     final_mcqs = []
     mcqs_count_by_selection = {}

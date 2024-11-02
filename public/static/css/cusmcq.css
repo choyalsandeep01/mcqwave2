@@ -114,7 +114,39 @@ ul#selectionList li .remove-btn {
 ul#selectionList li .remove-btn:hover {
     background-color: #cc0000; /* Darker red on hover */
 }
+.alert {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    transition: all 0.3s ease;
+}
 
+/* Different styles based on the message tags */
+.alert.info {
+    background-color: #d9edf7;
+    color: #31708f;
+    border: 1px solid #bce8f1;
+}
+
+.alert.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+}
+
+.alert.warning {
+    background-color: #fcf8e3;
+    color: #8a6d3b;
+    border: 1px solid #faebcc;
+}
+
+.alert.error {
+    background-color: #f2dede;
+    color: #a94442;
+    border: 1px solid #ebccd1;
+}
 @media (max-width: 600px) {
     .dropdowns select,
     .quiz-settings input,

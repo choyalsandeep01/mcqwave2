@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate , login , logout
 from .models import Profile
 from django.urls import reverse
 import re
+from base.email import send_account_activation_email
 def sign_up(request):
     if request.user.is_authenticated:
         user_uuid = request.user.profile.email_token
@@ -91,7 +92,9 @@ def activate_email(request , email_token):
         user = Profile.objects.get(email_token= email_token)
         user.is_email_verified = True
         user.save()
-        return redirect('/')
+        messages.warning(request, 'Your account is verified.')
+
+        return redirect('login')
     except Exception as e:
         return HttpResponse('Invalid Email token')
 
@@ -158,3 +161,39 @@ def password_reset_confirm(request, token):
             messages.error(request, 'Passwords do not match.')
 
     return render(request, 'accounts/password_reset_confirm.html', {'token': token})
+
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from .models import Profile
+from django.core.exceptions import ObjectDoesNotExist
+import uuid
+
+def resend_email(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+        
+        try:
+            # Check if the email exists
+            user = User.objects.get(email=email)
+            profile = user.profile
+            
+            # Check if the email is already verified
+            if profile.is_email_verified:
+                messages.error(request, "This email is already verified. You can log in.")
+                return redirect('resend_email')
+
+            # Generate a new token
+            new_token = str(uuid.uuid4())
+            profile.email_token = new_token
+            profile.save()
+
+            # Resend the activation email
+            send_account_activation_email(email, new_token)
+            
+            messages.success(request, "A new verification email has been sent.")
+            return redirect('resend_email')
+        except ObjectDoesNotExist:
+            messages.error(request, "No account found with this email address.")
+            return redirect('resend_email')
+
+    return render(request, 'accounts/resend_email.html')

@@ -76,16 +76,29 @@ def test(request, email_token):
         return HttpResponseRedirect(f'/{email_token}/mcq/')
     question_type = request.GET.get('questionType').title()
     difficulty_level = request.GET.get('difficultyLevel').title()
-    num_mcqs_str = request.GET.get('numQuestions', '25')  # Use a string '25' as the default
-    num_mcqs = int(num_mcqs_str) if num_mcqs_str.isdigit() else 25
+    num_mcqs_str = request.GET.get('numQuestions', '25')
+    try:
+        num_mcqs = round(float(num_mcqs_str))  # Round to the nearest integer
+    except ValueError:
+        num_mcqs = 25  # Default to 25 if input is invalid or missing
     
-
+    time_per_question_str = request.GET.get('timePerQuestion')
+    try:
+        time_per_question = float(time_per_question_str) if time_per_question_str else 1.0  # Default to 1 minute if None
+        # Ensure it's within the minimum and maximum limits
+        if time_per_question < 0.6:
+            time_per_question = 0.6
+        elif time_per_question > 3:
+            time_per_question = 3
+    except ValueError:
+        # Set to 1 minute if conversion fails
+        time_per_question = 1.0
     
 
     # Alert if number of questions requested exceeds 40
     if num_mcqs > 40:
         messages.error(request, "You cannot select more than 40 questions.")
-        return HttpResponseRedirect(f'/{email_token}/mcq/')
+        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
 
 
     selections_data = []
@@ -132,7 +145,7 @@ def test(request, email_token):
 
     if len(filtered_mcqs) == 0:
         messages.error(request, "No MCQs found with the current selections and filters. Please adjust your criteria.")
-        return HttpResponseRedirect(f'/{email_token}/mcq/')
+        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
 
 
     inverse_parts_count_sum = sum(1 / data['parts_count'] for data in selections_data)
@@ -169,13 +182,14 @@ def test(request, email_token):
         print(f"Final count of MCQs from selection '{selection}': {count}")
     print("final:",len(final_mcqs) )
     # Step 6: Serialize and prepare data for rendering
+    total_time_minutes = time_per_question * len(final_mcqs)
     serializer = MCQSerializer(final_mcqs, many=True)
     test_session = TestSession.objects.create(user=user, test_id=test_id, total_questions=len(final_mcqs), selections=selections)
     
     for mcq in final_mcqs:
         TestAnswer.objects.create(test_session=test_session, mcq_uid=mcq.uid)
     
-    return render(request, 'mcq/mcq.html', {'mcqs': json.dumps(serializer.data), 'count': len(final_mcqs), 'test_id': test_id})
+    return render(request, 'mcq/mcq.html', {'mcqs': json.dumps(serializer.data), 'count': len(final_mcqs), 'test_id': test_id,'total_time': total_time_minutes})
 
 
 

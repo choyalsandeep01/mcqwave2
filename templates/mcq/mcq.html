@@ -52,7 +52,7 @@
             <button class="next" id="next-button">Next</button>
             <button class="submit" id="submit-button" style="display:none;">Submit</button>
         </div>
-        <div class="timer">Time left: <span id="timer">10:00</span></div>
+        <div class="timer">Time left: <span id="timer">--</span></div>
     </div>
 
     <!-- Question Navigation -->
@@ -845,7 +845,6 @@ document.getElementById('confirm-submit').addEventListener('click', () => {
         intervalId = setInterval(() => {
             if (timeLeft <= 0) {
                 clearInterval(intervalId);
-                alert('Time is up! The quiz will now be submitted.');
                 submitQuiz(); // Automatically submit the quiz when time runs out
             } else {
                 timeLeft--;

@@ -10,7 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@100..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <div class="container">
         {% include "base/alert.html" %}
-
         <!-- Segment 1: Dynamic Dropdowns -->
         <h2>Select Topics</h2>
     <div class="dropdowns">
@@ -79,14 +78,10 @@
             <label for="numQuestions">Enter Number of Questions (max 40):</label>
             <input type="number" id="numQuestions" name="numQuestions" min="1" max="40">
 
-            <label for="timerOption">Do you want a timer for each question?</label>
-            <select id="timerOption" onchange="toggleTimerInput()">
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-            </select>
+        
 
-            <div id="timerInput" style="display: none;">
-                <label for="timePerQuestion">Enter Time per Question (in seconds):</label>
+            <div id="timerInput" >
+                <label for="timePerQuestion">Enter Time per Question (in minutes):</label>
                 <input type="number" id="timePerQuestion" name="timePerQuestion" min="10" max="300">
             </div>
 
@@ -211,11 +206,7 @@
         li.remove();
     }
     
-    function toggleTimerInput() {
-        const timerOption = document.getElementById("timerOption").value;
-        const timerInput = document.getElementById("timerInput");
-        timerInput.style.display = timerOption === "yes" ? "block" : "none";
-    }
+    
 
     function startTest() {
         const selections = [];
@@ -226,7 +217,6 @@
         const questionType = document.getElementById("questionType").value;
         const questionAvailability = document.getElementById("questionAvailability").value;
         const numQuestions = document.getElementById("numQuestions").value;
-        const timerOption = document.getElementById("timerOption").value;
         const timePerQuestion = document.getElementById("timePerQuestion").value;
         
         const difficultyLevel = document.getElementById("difficultyLevel").value;
@@ -236,7 +226,7 @@
             questionType,
             questionAvailability,
             numQuestions,
-            timerOption,
+            
             timePerQuestion,
             
             difficultyLevel
@@ -246,14 +236,15 @@
             questionType,
             questionAvailability,
             numQuestions,
-            timerOption,
+            
             timePerQuestion,
             
             difficultyLevel
         }).toString();
-       console.log(queryString)
+       console.log(queryString);
+       alert("Test is starting....");
         window.location.href = `test/?${queryString}`;
-        alert("Test is starting....");
+        
     }
 
     </script>

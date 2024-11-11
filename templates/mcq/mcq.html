@@ -40,7 +40,7 @@
         <p>Time Taken: <span id="time-taken"></span></p>
     </div>
 </div>
-<div class="mcq-container">
+<div class="mcq-container" id="mcq-container">
     <div class="mcq-header">
         <div class="menu-icon" id="menu-icon">☰</div> <!-- Menu icon -->
         <div class="question-info">
@@ -1001,6 +1001,31 @@ toggleDrawBtn.addEventListener('click', () => {
     loadQuestion(0);
     startTimer(); // Load the first question initially
 </script>
+
+<script>
+let startX = 0;
+
+    document.getElementById("mcq-container").addEventListener("touchstart", function(event) {
+        startX = event.touches[0].clientX;
+    });
+
+    document.getElementById("mcq-container").addEventListener("touchend", function(event) {
+        const endX = event.changedTouches[0].clientX;
+        const diffX = startX - endX;
+        const minSwipeDistance = 50; // Minimum swipe distance to detect a swipe
+
+        if (Math.abs(diffX) > minSwipeDistance) {
+            if (diffX > 0) {
+                // Swipe left, trigger the next button's click event
+                document.getElementById('next-button').click();
+            } else {
+                // Swipe right, trigger the back button's click event
+                document.getElementById('back-button').click();
+            }
+        }
+    });
+</script>
+
 {% endblock %}
 
 {%block pp%}

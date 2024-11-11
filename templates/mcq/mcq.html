@@ -837,7 +837,7 @@ document.getElementById('confirm-submit').addEventListener('click', () => {
     document.getElementById('image-viewer').addEventListener('click', () => {
         document.getElementById('image-viewer').style.display = 'none';
     });
-    let totalTime ={{ total_time }} * 60;
+    let totalTime =Math.round({{ total_time }} * 60);
     let timeLeft = totalTime; // Time in seconds (e.g., 10 minutes)
     let intervalId;
     function startTimer() {

@@ -119,6 +119,7 @@ class TestSession(models.Model):
     created_at = models.DateTimeField(default=datetime.now)
     total_questions = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     timetaken = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Track when the session was created
+    totaltime = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     selections = models.JSONField(default=list)
     def __str__(self):
         return f"TestSession for {self.user.username} with Test ID {self.test_id}"

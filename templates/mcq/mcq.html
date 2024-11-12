@@ -1005,9 +1005,13 @@ toggleDrawBtn.addEventListener('click', () => {
     if (isDrawingModeActive) {
         canvas.style.pointerEvents = 'auto';  // Enable interaction
         canvas.style.display = 'block';  // Show the canvas
+        toggleDrawBtn.style.backgroundColor = 'red';
+
     } else {
         canvas.style.pointerEvents = 'none';  // Disable interaction
         canvas.style.display = 'none';  // Hide the canvas when deactivated
+        toggleDrawBtn.style.backgroundColor = '#4CAF50';
+
     }
 });
 

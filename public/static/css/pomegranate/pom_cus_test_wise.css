@@ -190,9 +190,7 @@ textarea {
         flex-direction: column;
     }
 
-    .status-badges {
-        flex-direction: column;
-    }
+    
 
     button, a {
         padding: 8px 16px;

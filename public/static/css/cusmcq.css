@@ -38,7 +38,7 @@ h2 {
 .question-availability select {
     width: 100%;
     padding: 12px; /* Improved padding for a more comfortable look */
-    border: 1px solid #007bff; /* Blue border to match the theme */
+    border: 1px solid #b4b5; /* Blue border to match the theme */
     border-radius: 0px; /* Rounded corners */
     background-color: #f9f9f9;
     color: #333;
@@ -46,6 +46,7 @@ h2 {
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow to give depth */
     margin-bottom: 10px;
+    border-radius:20px;
 }
 
 .dropdowns select:hover,

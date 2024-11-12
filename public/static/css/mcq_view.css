@@ -11,7 +11,9 @@ body {
     height: 100vh;
 }
     
-
+#current-question{
+    font-size: 1.5rem;
+}
 #question-text{
     font-family: "Roboto Condensed", sans-serif;
     font-weight: bold;
@@ -147,6 +149,7 @@ nav {
     display: flex;
     align-items: center;
     letter-spacing: 1.3px;
+    margin-right: 8px;
 }
 .menu-icon {
     font-size: 24px;
@@ -164,24 +167,32 @@ nav {
     background-color: #2196F3; /* Blue color */
     color: white;
     cursor: pointer;
+    border-radius: 25px;
 }
 
-.header-buttons button:hover {
+.header-buttons button:not(.save):not(.review):hover {
     background-color: #0b7dda; /* Darker blue on hover */
 }
 
 .mcq-header .timer {
     font-weight: bold;
     margin-top: 10px;
+    padding: 8px 15px;
     text-align: right;
-    flex-basis: 100%;
+    display: inline-block; /* Width fits content */
+    background-color: #f5f5f5; /* Light gray background for a subtle look */
+    color: #333; /* Dark text for readability */
+    border: 1px solid #ddd; /* Light border for definition */
+    border-radius: 15px; /* Rounded corners */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for a professional touch */
 }
+
 
 .question-nav {
     display: none; /* Hide initially */
     flex-direction: column; /* Stack buttons vertically */
     position: absolute;
-    top: 50px; /* Adjust based on header height */
+    top: 125px; /* Adjust based on header height */
     right: 0;
     background: white;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -323,25 +334,48 @@ nav {
     flex: 1; /* Flex items to share the space equally */
     margin: 3px; /* Remove margin for uniform spacing */
 }
+#toggle-draw-btn {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White icon color */
+    border: none; /* Remove default border */
+    padding: 15px; /* Space around the icon */
+    border-radius: 50%; /* Make the button circular */
+    cursor: pointer; /* Change cursor on hover */
+    font-size: 20px; /* Increase icon size */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth hover transition */
+}
+
+#toggle-draw-btn:hover {
+    background-color: #45a049; /* Slightly darker green on hover */
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3); /* Enhance shadow on hover */
+}
+
+#toggle-draw-btn i {
+    margin: 0; /* Ensure icon is centered */
+}
 
 .mcq-footer .bookmark,
-.mcq-footer .save,
-.mcq-footer .review,
+
 .mcq-footer .next,
 .mcq-footer .back {
     background-color: #2196F3;
     color: white;
+    border-radius: 25px;
 }
-.mcq-footer.review-mode .save,
-.mcq-footer.review-mode .review {
+.header-buttons.review-mode .save,
+.header-buttons.review-mode .review {
     display: none;
 }
-.mcq-footer .save {
+.header-buttons .save {
     background-color: #4CAF50;
+    border-radius: 25px;
 }
 
-.mcq-footer .review {
+.header-buttons .review {
     background-color: #FF9800;
+    border-radius: 25px;
+
 }
 
 .status-text {
@@ -653,7 +687,7 @@ nav {
     }
     .review-status {
        
-        margin-right: 3px;
+        margin-right: 12px;
     }
     .bookmark-button{
         font-size: 16px;

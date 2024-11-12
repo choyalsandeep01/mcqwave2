@@ -5,6 +5,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@100..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/media/css/mcq_view.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <div id="results-section" style="display:none;">
@@ -45,11 +47,11 @@
         <div class="menu-icon" id="menu-icon">☰</div> <!-- Menu icon -->
         <div class="question-info">
             <div class="review-status" id="review-status"></div>
-            Question <span id="current-question">1</span> of <span id="total-questions">{{ count }}</span>
+             <span id="current-question">1</span>  /  <span id="total-questions">{{ count }}</span>
         </div>
         <div class="header-buttons">
-            <button class="back" id="back-button">Back</button>
-            <button class="next" id="next-button">Next</button>
+            <button class="save" id="save-button">Save</button>
+        <button class="review" id="review-button">Review</button>
             <button class="submit" id="submit-button" style="display:none;">Submit</button>
         </div>
         <div class="timer">Time left: <span id="timer">--</span></div>
@@ -83,8 +85,9 @@
             <button class="action-btn1" data-type="Unstudied">📚 Unstudied</button>
             <button class="action-btn1" data-type="Other">💡 Other</button>
         </div>
-        <button class="save" id="save-button">Save</button>
-        <button class="review" id="review-button">Review</button>
+        <button class="back" id="back-button">Back</button>
+            <button class="next" id="next-button">Next</button>
+        
         
     </div>
 </div>
@@ -116,9 +119,12 @@
     </div>
     
 </div>
-<button id="toggle-draw-btn">Activate Drawing Mode</button>
+<button id="toggle-draw-btn"><i class="fas fa-pencil-alt"></i></button>
 <canvas id="drawingCanvas"></canvas>
 <div id="loader" class="loader"></div>
+
+
+
 <script>
     {% if selected_answers %}
         let bookmarkedMcqs = JSON.parse('{{ bookmarked_mcqs|safe }}');
@@ -276,7 +282,6 @@
         
         updateNav();
         if (!isReviewMode) {
-            console.log('CURRENTUID:', currentQuestionUID);
             const mcquid = mcq.uid;
             if (currentQuestionUID) {
                 calculateTimeSpent(currentQuestionUID);
@@ -307,7 +312,7 @@
         }
         
         var test_id = '{{ test_id }}';  // Pass the test_id to the function
-        
+        const timetaken = calculateTimeTaken();
         const csrftoken = getCookie('csrftoken');
             $.ajax({
                 url: '/mcqs/save-answer/',
@@ -316,6 +321,7 @@
                     'test_id': test_id,
                     'mcq_uid': uid,
                     'time_spent': questionTimes[uid],
+                    'time_taken':timetaken,
                 },
                 headers: {
                     'X-CSRFToken': csrftoken  // Include the CSRF token in the header
@@ -375,6 +381,8 @@
         updateReviewStatusCircle();
         
         console.log("CHLA");
+        const timetaken = calculateTimeTaken();
+
         const csrftoken = getCookie('csrftoken');
             $.ajax({
                 url: '/mcqs/save-answer/',
@@ -383,6 +391,7 @@
                     'test_id': test_id,
                     'mcq_uid': mcq_uid,
                     'selected_option': selected_option,
+                    'time_taken':timetaken,
                 },
                 headers: {
                     'X-CSRFToken': csrftoken  // Include the CSRF token in the header
@@ -560,10 +569,9 @@
 
 
     function submitQuiz() {
-    sessionStorage.setItem('test_terminated', true);
+        current_time =Date.now();
     const mcqIds = mcqs.map(mcq => mcq.uid);
-    console.log(typeof(mcqIds));
-    console.log(mcqIds);
+    
     const mcq = mcqs[current_que_index];
     let userchoices ={};
 
@@ -576,23 +584,19 @@
         }
     }
 
-    console.log(userchoices);
 
     if (!isReviewMode) {
-        console.log('CURRENTUID:', currentQuestionUID);
         const mcquid = mcq.uid;
         if (currentQuestionUID) {
             uid = currentQuestionUID
-            console.log(uid)
             if (!currentQuestionStartTime) return; // If no start time, return
 
-            const endTime = Date.now();
+            const endTime = current_time;
             const timeSpent = (endTime - currentQuestionStartTime) / 1000; // Time in seconds
 
         // If this question already has some time tracked, add to it
             if (questionTimes[uid]) {
                 questionTimes[uid] += timeSpent;
-                console.log(questionTimes);
             } else {
                 questionTimes[uid] = timeSpent;
             }
@@ -600,7 +604,7 @@
         }
         
         // Set the current question UID and start time
-       console.log(uid)
+       
 }      
         const timetaken = calculateTimeTaken(); 
         const csrftoken = getCookie('csrftoken');
@@ -837,11 +841,21 @@ document.getElementById('confirm-submit').addEventListener('click', () => {
     document.getElementById('image-viewer').addEventListener('click', () => {
         document.getElementById('image-viewer').style.display = 'none';
     });
-    let totalTime =Math.round({{ total_time }} * 60);
+    {% if time_left_minutes %}
+        let totalTime = Math.round({{ time_left_minutes }} * 60);
+    {% else %}
+        let totalTime =Math.round({{ total_time }} * 60);
+    {% endif %}
+
+    
+    
     let timeLeft = totalTime; // Time in seconds (e.g., 10 minutes)
     let intervalId;
     function startTimer() {
         const timerElement = document.getElementById('timer');
+        const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerElement.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         intervalId = setInterval(() => {
             if (timeLeft <= 0) {
                 clearInterval(intervalId);
@@ -858,7 +872,8 @@ document.getElementById('confirm-submit').addEventListener('click', () => {
     clearInterval(intervalId);
 }
 function calculateTimeTaken() {
-    const timeTaken = totalTime - timeLeft;
+    total_Time = Math.round({{ total_time }} * 60);
+    const timeTaken = total_Time - timeLeft;
     const minutesTaken = Math.floor(timeTaken / 60);
     const secondsTaken = timeTaken % 60;
     return `${minutesTaken}:${secondsTaken < 10 ? '0' : ''}${secondsTaken}`;
@@ -872,7 +887,7 @@ function showReviewMode() {
     document.getElementById('results-section').style.display = 'none'; // Hide results section
     document.querySelector('.mcq-container').style.display = 'block'; // Show MCQ container
     ensureScroll();
-    const footer = document.querySelector('.mcq-footer');
+    const footer = document.querySelector('.header-buttons');
     
     footer.classList.add('review-mode');
     currentQuestionIndex = 0
@@ -1001,7 +1016,6 @@ toggleDrawBtn.addEventListener('click', () => {
     loadQuestion(0);
     startTimer(); // Load the first question initially
 </script>
-
 <script>
 let startX = 0;
 
@@ -1012,7 +1026,7 @@ let startX = 0;
     document.getElementById("mcq-container").addEventListener("touchend", function(event) {
         const endX = event.changedTouches[0].clientX;
         const diffX = startX - endX;
-        const minSwipeDistance = 50; // Minimum swipe distance to detect a swipe
+        const minSwipeDistance = window.innerWidth * 0.3;// Minimum swipe distance to detect a swipe
 
         if (Math.abs(diffX) > minSwipeDistance) {
             if (diffX > 0) {

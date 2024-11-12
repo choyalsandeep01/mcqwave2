@@ -183,9 +183,11 @@ def test(request, email_token):
     print("final:",len(final_mcqs) )
     # Step 6: Serialize and prepare data for rendering
     total_time_minutes = time_per_question * len(final_mcqs)
+    print(total_time_minutes)
+    total_time_seconds = round(total_time_minutes * 60)
+
     serializer = MCQSerializer(final_mcqs, many=True)
-    test_session = TestSession.objects.create(user=user, test_id=test_id, total_questions=len(final_mcqs), selections=selections)
-    
+    test_session = TestSession.objects.create(user=user, test_id=test_id, total_questions=len(final_mcqs), selections=selections,totaltime=total_time_seconds)
     for mcq in final_mcqs:
         TestAnswer.objects.create(test_session=test_session, mcq_uid=mcq.uid)
     
@@ -271,12 +273,16 @@ def save_answer(request):
         mcq_uid = request.POST.get('mcq_uid')
         selected_option = request.POST.get('selected_option')
         time_spent = request.POST.get('time_spent')
-       
-        print(selected_option)
+        time_taken = request.POST.get('time_taken')
+        minutes, seconds = map(int, time_taken.split(':'))
+        total_seconds = minutes * 60 + seconds
         
         try:
             test_session = TestSession.objects.get(user=user, test_id=test_id)
             test_answer = TestAnswer.objects.get(test_session=test_session, mcq_uid=mcq_uid)
+            test_session.timetaken = total_seconds
+            test_session.save() 
+            print(test_session.timetaken)
             if selected_option is not None:  # Check if selected_option is present
                 test_answer.selected_option = selected_option
                 if selected_option != "":
@@ -316,7 +322,14 @@ def continue_test(request, test_id):
     mcqs_data = []
     selected_answers = {}
     timespent = {}
+    time_taken = getattr(test_session, 'timetaken', 0)  # Defaults to 0 if 'time_taken' attribute is missing
+    total_time = test_session.totaltime   # Total allowed time in seconds
+    total_time_minutes = total_time/60
+# Calculate time left in seconds
+    time_left_seconds = total_time - time_taken
 
+# Convert time left into minutes with decimal precision
+    time_left_minutes = time_left_seconds / 60
     for index, answer in enumerate(test_answers):
         try:
             mcq = MCQ.objects.get(uid=answer.mcq_uid)
@@ -348,6 +361,8 @@ def continue_test(request, test_id):
         'timespent': timespent_json,
         'selected_answers': selected_answers_json,
         'bookmarked_mcqs': bookmarked_mcqs_json,
+        'total_time':total_time_minutes ,
+        'time_left_minutes':time_left_minutes,
     })
 
 from django.db import transaction

@@ -143,7 +143,7 @@
      // Store selected answers by question index
     let reviewQuestions = {}; // Store review status by question index
     let isReviewMode = false;
-
+    console.log(selectedAnswers);
     {% if timespent %}
     let questionTimes = JSON.parse('{{ timespent|escapejs }}');
     console.log("time mila")
@@ -153,7 +153,7 @@
     {% endif %}
     let currentQuestionStartTime = null;
     let currentQuestionUID = null;
-
+    let currentquestionuidforoption =null;
     function loadQuestion(index) {
         if (index < 0 || index >= mcqs.length) return; // Bounds check
     
@@ -211,7 +211,6 @@
     
         const userAnswer = selectedAnswers[index]; // User's selected option (A, B, C, or D)
         const correctAnswerText = mcq.correct_option; // Correct answer text
-    
         // Find the correct option value from the text
         const correctOption = options.find(opt => opt.text === correctAnswerText)?.value;
     
@@ -290,6 +289,7 @@
             // Set the current question UID and start time
             currentQuestionUID = mcquid;
             currentQuestionStartTime = Date.now();
+            currentquestionuidforoption =currentQuestionStartTime;
     }
     }
     
@@ -299,10 +299,12 @@
     function calculateTimeSpent(uid) {
         
         if (!currentQuestionStartTime) return; // If no start time, return
-
+        console.log("curremt",currentQuestionStartTime);
         const endTime = Date.now();
-        const timeSpent = (endTime - currentQuestionStartTime) / 1000; // Time in seconds
+        console.log("end",endTime);
 
+        const timeSpent = (endTime - currentQuestionStartTime) / 1000; // Time in seconds
+        
         // If this question already has some time tracked, add to it
         if (questionTimes[uid]) {
             questionTimes[uid] += timeSpent;
@@ -310,7 +312,7 @@
         } else {
             questionTimes[uid] = timeSpent;
         }
-        
+        console.log(questionTimes[uid]);
         var test_id = '{{ test_id }}';  // Pass the test_id to the function
         const timetaken = calculateTimeTaken();
         const csrftoken = getCookie('csrftoken');
@@ -379,7 +381,30 @@
         
         // Update the review status circle
         updateReviewStatusCircle();
-        
+        if (!isReviewMode) {
+            const mcquid = mcqs[index].uid;
+            if (currentQuestionUID) {
+                uid = currentQuestionUID
+                if (!currentquestionuidforoption) return; // If no start time, return
+                const endTime = Date.now();
+                console.log("cuurent",currentquestionuidforoption);
+                console.log("end",endTime)
+                const timeSpent = (endTime - currentquestionuidforoption) / 1000; // Time in seconds
+                currentquestionuidforoption = Date.now();
+                currentQuestionStartTime = currentquestionuidforoption;
+                console.log(timeSpent);
+            // If this question already has some time tracked, add to it
+                if (questionTimes[uid]) {
+                    questionTimes[uid] += timeSpent;
+                } else {
+                    questionTimes[uid] = timeSpent;
+                }
+                console.log(questionTimes[uid]);
+            }
+            
+            // Set the current question UID and start time
+           
+    }      
         console.log("CHLA");
         const timetaken = calculateTimeTaken();
 
@@ -392,6 +417,7 @@
                     'mcq_uid': mcq_uid,
                     'selected_option': selected_option,
                     'time_taken':timetaken,
+                    'time_spent': questionTimes[uid],
                 },
                 headers: {
                     'X-CSRFToken': csrftoken  // Include the CSRF token in the header
@@ -405,7 +431,6 @@
                     console.log('Response:', xhr.responseText);
                 }
             });
-            console.log("DONE");
     }
 
     
@@ -602,7 +627,7 @@
             }
 
         }
-        
+        console.log(questionTimes[uid]);
         // Set the current question UID and start time
        
 }      
@@ -1006,12 +1031,10 @@ toggleDrawBtn.addEventListener('click', () => {
         canvas.style.pointerEvents = 'auto';  // Enable interaction
         canvas.style.display = 'block';  // Show the canvas
         toggleDrawBtn.style.backgroundColor = 'red';
-
     } else {
         canvas.style.pointerEvents = 'none';  // Disable interaction
         canvas.style.display = 'none';  // Hide the canvas when deactivated
         toggleDrawBtn.style.backgroundColor = '#4CAF50';
-
     }
 });
 

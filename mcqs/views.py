@@ -280,6 +280,7 @@ def save_answer(request):
         try:
             test_session = TestSession.objects.get(user=user, test_id=test_id)
             test_answer = TestAnswer.objects.get(test_session=test_session, mcq_uid=mcq_uid)
+            test_answer.timespent = time_spent
             test_session.timetaken = total_seconds
             test_session.save() 
             print(test_session.timetaken)

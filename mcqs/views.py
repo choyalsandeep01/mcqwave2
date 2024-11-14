@@ -292,6 +292,9 @@ def save_answer(request):
                     test_answer.is_attempted = False
             elif time_spent is not None:  # If not, check for time_spent
                 test_answer.timespent = time_spent
+                
+                
+                test_answer.save()
             test_answer.save()
 
             

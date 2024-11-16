@@ -137,8 +137,11 @@
     let currentQuestionIndex = 0;
     {% if selected_answers %}
         let selectedAnswers = JSON.parse('{{ selected_answers|escapejs }}');
+        let selectedAnswerTexts = JSON.parse('{{ selected_option_texts|escapejs }}');
+        
     {% else %}
         let selectedAnswers = {};
+        let selectedAnswerTexts = {};
     {% endif %}
      // Store selected answers by question index
     let reviewQuestions = {}; // Store review status by question index

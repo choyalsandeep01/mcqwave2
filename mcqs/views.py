@@ -331,7 +331,7 @@ def continue_test(request, test_id):
     total_time_minutes = total_time/60
 # Calculate time left in seconds
     time_left_seconds = total_time - time_taken
-
+    selected_option_texts = {}
 # Convert time left into minutes with decimal precision
     time_left_minutes = time_left_seconds / 60
     for index, answer in enumerate(test_answers):
@@ -339,7 +339,22 @@ def continue_test(request, test_id):
             mcq = MCQ.objects.get(uid=answer.mcq_uid)
         except ObjectDoesNotExist:
             continue  # Skip if the MCQ does not exist
+        if answer.is_attempted:
+            if answer.selected_option == "A":
+                selected_option_text = mcq.option_1
+            elif answer.selected_option == "B":
+                selected_option_text = mcq.option_2
+            elif answer.selected_option == "C":
+                selected_option_text = mcq.option_3
+            elif answer.selected_option == "D":
+                selected_option_text = mcq.option_4
+            else:
+                selected_option_text = ''  # Unexpected value
+        else:
+            selected_option_text = ''  # Not attempted
 
+    # Populate the selected_answers dictionary
+        selected_option_texts[index] = selected_option_text
         serializer = MCQSerializer(mcq)
         mcq_data = serializer.data
         mcq_data['selected_option'] = answer.selected_option
@@ -358,6 +373,8 @@ def continue_test(request, test_id):
     selected_answers_json = json.dumps(selected_answers)
     timespent_json = json.dumps(timespent)
     bookmarked_mcqs_json = json.dumps(bookmarked_mcqs)
+    selected_option_texts_json = json.dumps(selected_option_texts)
+
     return render(request, 'mcq/mcq.html', {
         'mcqs': mcqs_json, 
         'count': len(mcqs_data), 
@@ -367,7 +384,9 @@ def continue_test(request, test_id):
         'bookmarked_mcqs': bookmarked_mcqs_json,
         'total_time':total_time_minutes ,
         'time_left_minutes':time_left_minutes,
+        'selected_option_texts': selected_option_texts_json,
     })
+
 
 from django.db import transaction
 

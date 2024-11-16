@@ -258,19 +258,26 @@
         }
     
         // Display review status if marked
-        const statusText = document.getElementById('status-text');
-        statusText.innerText = reviewQuestions[index] ? "Question under review" : "";
         const revbutn = document.getElementById("review-button");
         
         const saveButton = document.getElementById("save-button");
         
+        
+        // Display review status if marked
+        const statusText = document.getElementById('status-text');
+        statusText.innerText = reviewQuestions[index] ? "Question under review" : "";
+        if (!isReviewMode) {
         if (reviewQuestions[index]) {
             revbutn.style.display = "none"; // Show the first element
             saveButton.style.display = "block"; // Show the second element
         } else {
             revbutn.style.display = "block"; // Show the first element
             saveButton.style.display = "none"; // Hide the second element
-        }
+        }     
+    }else{
+        revbutn.style.display = "none"; // Show the first element
+            saveButton.style.display = "none";
+    }
         // Update review status circle
         const reviewStatus = document.getElementById('review-status');
         if (reviewQuestions[index]) {
@@ -454,26 +461,35 @@
 
     
     function markForReview() {
+        const revbutn = document.getElementById("review-button");
+        const saveButton = document.getElementById("save-button");
+
+        if (!isReviewMode) {
         reviewQuestions[currentQuestionIndex] = true;
         console.log(reviewQuestions);
         document.getElementById('status-text').innerText = "Question under review";
-        const revbutn = document.getElementById("review-button");
         revbutn.style.display = "none";
-        const saveButton = document.getElementById("save-button");
         saveButton.style.display = "block";
         // Update the navigation button color to yellow
         updateNavButtonColor(currentQuestionIndex, 'yellow');
 
         // Update the review status circle
         updateReviewStatusCircle();
+        }
+        else{
+            revbutn.style.display = "none";
+        saveButton.style.display = "none";
+        }
     }
+
     function saveAnswer() {
-        
+        const revbutn = document.getElementById("review-button");
+        const saveButton = document.getElementById("save-button");
+
+        if (!isReviewMode) {
             reviewQuestions[currentQuestionIndex] = false; // Remove review status
             document.getElementById('status-text').innerText = ""; // Clear review status text
-            const revbutn = document.getElementById("review-button");
             revbutn.style.display = "block";
-            const saveButton = document.getElementById("save-button");
             saveButton.style.display = "none";
             // Update the navigation button color to green
             updateNavButtonColor(currentQuestionIndex, 'green');
@@ -481,8 +497,12 @@
 
         // Update the review status circle
         updateReviewStatusCircle();
+        }
+        else{
+            revbutn.style.display = "none";
+            saveButton.style.display = "none";
+        }
     }
-
     function updateReviewStatusCircle() {
         const reviewStatus = document.getElementById('review-status');
         if (reviewQuestions[currentQuestionIndex]) {

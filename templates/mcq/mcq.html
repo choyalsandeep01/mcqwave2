@@ -79,14 +79,14 @@
     </div>
 
     <div class="mcq-footer">
-        <button class="bookmark" id="bookmark-button">Bookmark</button>
+        <button class="bookmark" id="bookmark-button"><i class="fas fa-bookmark"></i></button>
         <div id="expanded-menu" class="expanded-menu hidden">
             <button class="action-btn1" data-type="Star">⭐ Star</button>
             <button class="action-btn1" data-type="Unstudied">📚 Unstudied</button>
             <button class="action-btn1" data-type="Other">💡 Other</button>
         </div>
-        <button class="back" id="back-button">Back</button>
-            <button class="next" id="next-button">Next</button>
+        <button class="back" id="back-button"><i class="fas fa-arrow-left"></i> Back</button>
+            <button class="next" id="next-button">    Next <i class="fas fa-arrow-right"></i>
         
         
     </div>
@@ -297,6 +297,12 @@
         } else {
             document.getElementById('next-button').style.display = 'inline-block';
             document.getElementById('submit-button').style.display = isReviewMode ? 'none' : 'inline-block';
+        }
+        if(index==0){
+            document.getElementById('back-button').style.display = 'none';
+        }
+        else{
+            document.getElementById('back-button').style.display = 'inline-block';
         }
         
         updateNav();

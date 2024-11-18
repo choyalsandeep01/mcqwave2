@@ -658,3 +658,14 @@ By following these steps, you can significantly boost the speed and responsivene
 
 
 ------------------------------------------------------------------------------------------------
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mcqwave',
+        'USER': 'postgres',
+        'PASSWORD':'postgresmcqwave',
+        'HOST':'database.cd84saeowy0p.eu-north-1.rds.amazonaws.com',
+        'PORT':''
+    }
+}

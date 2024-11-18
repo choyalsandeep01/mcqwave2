@@ -123,7 +123,7 @@ body {
 nav {
     position: relative;
     z-index: 1000;
-    background: #0082e6;
+    background: #004aad;
 }
 .mcq-content {
     flex: 1;
@@ -164,7 +164,7 @@ nav {
 .header-buttons button {
     padding: 10px 20px;
     border: none;
-    background-color: #2196F3; /* Blue color */
+    background-color: #004aad; /* Blue color */
     color: white;
     cursor: pointer;
     border-radius: 25px;
@@ -229,15 +229,15 @@ nav {
 
 #toggle-draw-btn {
     position: fixed;
-    bottom:50px;
-    left: 20px;
+    bottom:71px;
+    left: 88%;
     z-index: 2000;
     pointer-events: auto;  /* Button should appear on top of canvas */
 }
 .question-nav button.active {
-    background-color: #2196F3;
+    background-color: #004aad;
     color: white;
-    border: 5px solid #2196F3;
+    border: 5px solid #004aad;
 }
 
 .question {
@@ -341,7 +341,7 @@ nav {
     padding: 15px; /* Space around the icon */
     border-radius: 50%; /* Make the button circular */
     cursor: pointer; /* Change cursor on hover */
-    font-size: 20px; /* Increase icon size */
+    font-size: 12px; /* Increase icon size */
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth hover transition */
 }
@@ -359,7 +359,7 @@ nav {
 
 .mcq-footer .next,
 .mcq-footer .back {
-    background-color: #2196F3;
+    background-color: #004aad;
     color: white;
     border-radius: 25px;
 }
@@ -569,7 +569,7 @@ nav {
 }
 
 .action-btn1:hover {
-    background-color: #2196F3;
+    background-color: #004aad;
     color: white;
     transform: scale(1.05);
 }

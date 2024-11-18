@@ -372,7 +372,7 @@
 }
 .pomegranate-container{
      top:50% !important;
-     color: black !important;
+     color: rgb(255, 255, 255) !important;
 }
 .cls{
     padding-top: 25%;
@@ -457,8 +457,20 @@
         }
     
         .pomegranate-container span {
-            font-size: 1rem;
+            font-size: 0.6rem;
         }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 3px;
+        }
+        .square-button {
+            background-color: #004aad;
+            width: 98%;
+            height: 110px;}
+            .square-button div {
+            font-size: 0.7rem;
+            }
 }
 .card-container {
     perspective: 1000px;

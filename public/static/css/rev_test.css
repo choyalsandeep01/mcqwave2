@@ -102,14 +102,14 @@ body {
 }
 /* Test Overview */
 .test-overview {
-    border-bottom: 3px solid #007bff;
+    border-bottom: 3px solid #004aad;
     padding-bottom: 20px;
     margin-bottom: 30px;
 }
 
 .test-overview h2 {
     font-size: 1.4rem;
-    color: #007bff;
+    color: #004aad;
     margin-bottom: 15px;
 }
 
@@ -128,7 +128,7 @@ body {
     background-color: #f8f9fc;
     padding: 20px;
     margin-bottom: 25px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #004aad;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     transform: translateY(10px);
@@ -142,7 +142,7 @@ body {
 
 .mcq-card h3 {
     font-size: 1.2rem;
-    color: #007bff;
+    color: #004aad;
     margin-bottom: 20px;
 }
 .mcq-card p {
@@ -179,7 +179,7 @@ body {
 }
 
 .options li.correct-answer {
-    background-color: #007bff;
+    background-color: #004aad;
     color: white;
 }
 
@@ -204,7 +204,7 @@ body {
 .feedback textarea {
     width: 100%;
     padding: 12px;
-    border: 2px solid #007bff;
+    border: 2px solid #004aad;
     border-radius: 6px;
     margin-bottom: 10px;
     resize: none;
@@ -212,7 +212,7 @@ body {
 
 .feedback button {
     padding: 12px 24px;
-    background-color: #007bff;
+    background-color: #004aad;
     color: white;
     border: none;
     border-radius: 6px;

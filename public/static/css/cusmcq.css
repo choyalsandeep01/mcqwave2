@@ -18,7 +18,7 @@ h2 {
     font-size: 22px;
     color: #333;
     margin-bottom: 10px;
-    border-bottom: 2px solid #007bff; /* Adding a border for emphasis */
+    border-bottom: 2px solid #004aad; /* Adding a border for emphasis */
     padding-bottom: 5px;
 }
 
@@ -64,7 +64,7 @@ h2 {
     display: block;
     width: 100%;
     padding: 12px;
-    background-color: #007bff;
+    background-color: #004aad;
     color: white;
     border: none;
     border-radius: 8px; /* Rounded corners */
@@ -86,7 +86,7 @@ ul#selectionList {
 }
 
 ul#selectionList li {
-    background-color: #007bff;
+    background-color: #004aad;
     color: white;
     padding: 10px;
     margin-bottom: 5px;

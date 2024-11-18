@@ -20,7 +20,7 @@ header {
 }
 
 nav {
-  background: #0082e6;
+  background: #004aad;
   height: 80px;
   width: 100%;
   
@@ -115,7 +115,7 @@ a.active, a:hover {
   display: block;
 }
 footer {
-  background: #0082e6;
+  background: #004aad;
   color: white;
   text-align: center;
   padding: 20px 0;

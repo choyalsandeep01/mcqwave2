@@ -1,27 +1,214 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-    <link rel="stylesheet" href="/media/css/acc_test.css">
+<style>
+    :root {
+        --primary-color: #DC143C;
+        --secondary-color: #f15474;
+        --background-color: #f4f7fa;
+        --text-color: #2c3e50;
+        --card-background: #ffffff;
+    }
+
+    * {
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+    }
+
+    body {
+        
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        
+    }
+
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .dashboard-title {
+        color: var(--primary-color);
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -1px;
+    }
+
+    .info-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(220, 20, 60, 0.3);
+        transition: all 0.3s ease;
+    }
+    nav{
+        background:#DC143C;
+        -webkit-background: #DC143C; /* For older Safari */}
+    a.active, a:hover {
+            background: #f15474;
+            transition: .5s;
+        }
+        footer {
+            margin-top: auto;
+            font-size: 0.9em;
+            background:#DC143C !important;
+        }
+    .info-btn:hover {
+        background-color: var(--secondary-color);
+        transform: scale(1.05);
+    }
+
+    .chart-container {
+        width: 100%;
+        height: 500px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    .accuracy-table {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .accuracy-table th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .accuracy-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .accuracy-table tr:hover {
+        background-color: rgba(241, 84, 116, 0.1);
+    }
+
+    .sel {
+        color: var(--text-color);
+        list-style-type: none;
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .sel::before {
+        content: '•';
+        color: var(--primary-color);
+        position: absolute;
+        left: 0;
+    }
+
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: white;
+        color: var(--text-color);
+        border-radius: 15px;
+        max-width: 600px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        color: var(--primary-color);
+        cursor: pointer;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 5px;
+        }
+        .chart-container {
+            height: 350px;
+        }
+        .dashboard-title {
+            font-size: 1.8rem;
+        }
+        nav ul{
+            background:#6d0c20;
+        }
+        a:hover, a.active {
+            
+            color: #ffffff;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Performance Dashboard</h1>
+        <button id="infoButton" class="info-btn">ⓘ</button>
+    </div>
 
     <div class="chart-container">
         <canvas id="accuracyVsTestChart"></canvas>
     </div>
-    <button id="infoButton" class="info-btn">i</button>
+
     <div id="infoModal" class="modal">
         <div class="modal-content">
             <span id="closeButton" class="close-btn">&times;</span>
-            <h3>Instructions</h3>
-            <p>
-                This graph represents your performance analysis. The overall average accuracy across the test sessions is displayed.<br>
-                If you have fewer than 5 test sessions, the data will show individual session scores.<br>
-                - 1 to 5 tests: Individual scores.<br>
-                - 6 to 10 tests: Groups of 2 sessions.<br>
-                - 11 to 20 tests: Groups of 4 sessions.<br>
-                - More than 20 tests: Groups of 10 sessions.<br>
-                Use this analysis to track your improvement over time.
-            </p>
+            <h2>Performance Analysis Guide</h2>
+            <p>This dashboard visualizes your test performance over time. Key insights:</p>
+            <ul>
+                <li>Fewer than 5 tests: Individual session scores displayed</li>
+                <li>6-10 tests: Grouped by 2 sessions</li>
+                <li>11-20 tests: Grouped by 4 sessions</li>
+                <li>More than 20 tests: Grouped by 10 sessions</li>
+            </ul>
+            <p>Track your progress and identify areas of improvement.</p>
         </div>
     </div>
+
     <div class="table-container">
         <table class="accuracy-table">
             <thead>
@@ -39,7 +226,7 @@
                     <td>
                         <ul>
                             {% for selection in data.selections %}
-                                <li  class="sel">{{ selection }}</li> <!-- Display each selection -->
+                                <li class="sel">{{ selection }}</li>
                             {% endfor %}
                         </ul>
                     </td>
@@ -48,8 +235,10 @@
             </tbody>
         </table>
     </div>
-    <!-- Include Chart.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</div>
+
+<!-- Existing Chart.js and JavaScript code remains the same -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Pass the accuracy data from Django to JavaScript
@@ -159,18 +348,22 @@ window.addEventListener('click', (event) => {
     }
 });
 </script>
+{% endblock %}
+{%block pp%}
 
-    {% endblock %}
+<li class="dropdown">
+    <a href="javascript:void(0)" class="dropbtn">
+      
+        <i class="fas fa-user-circle profile-icon"></i>
+      
+      {{ user.username }}
+      
+    </a>
+    <div class="dropdown-content">
+      <a href="#">Settings</a>
+      <a href={% url 'logout' %}>Logout</a>
+    </div>
+  </li>
 
-    {% block pp %}
-      <li class="dropdown">
-        <a href="javascript:void(0)" class="dropbtn">
-          <i class="fas fa-user-circle profile-icon"></i>
-          {{ user.username }}
-        </a>
-        <div class="dropdown-content">
-          <a href="#">Settings</a>
-          <a href="{% url 'logout' %}">Logout</a>
-        </div>
-      </li>
-    {% endblock %}
+
+{%endblock%} 

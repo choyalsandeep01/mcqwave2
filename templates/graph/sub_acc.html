@@ -1,170 +1,380 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-    <!-- Include Chart.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Make sure the container takes up 100% width and height of the viewport */
-        body {
-            margin: 0;
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #eef2f7;
-            min-height:100vh;
+<style>
+    body {
+        background-color: #f4f6f9;
+    }
+    
+    .container-fluid {
+        padding: 0.4rem;
+    }
+    nav{
+        background:#DC143C;
+        -webkit-background: #DC143C; /* For older Safari */}
+    a.active, a:hover {
+            background: #f15474;
+            transition: .5s;
         }
         footer {
             margin-top: auto;
             font-size: 0.9em;
             background:#DC143C !important;
         }
-        .chart-container {
-            width: 90%;
-            max-width: 1200px;
-            height: 60vh; /* Default height */
-            max-height: 600px; /* Max height */
-            margin: 20px;
-            overflow-x:auto;
-            overflow-y:hidden;
-            flex-grow: 1; 
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .card-header {
+        background-color: #ff4d70 !important;
+        color: white !important;
+        padding: 1rem 1.5rem;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    
+    .chart-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .chart-scroll-wrapper {
+        min-width: 100%;
+        width: max-content;
+    }
+    
+    .chart-container::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .chart-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .chart-container::-webkit-scrollbar-thumb {
+        background: #4a6cf7;
+        border-radius: 4px;
+    }
+    
+    .chart-hint {
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        opacity: 0.7;
+    }
+    
+    #analysisChart {
+        min-width: 600px;  /* Reduced from 1000px */
+        width: 100%;
+        max-width: none !important;
+        height: 400px;  /* Fixed height */
+    }
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table thead {
+        background-color: #f8f9fa;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #495057;
+        vertical-align: middle;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        color: #212529;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(74, 108, 247, 0.05);
+        transition: background-color 0.3s ease;
+    }
+    
+    @media (max-width: 768px) {
+        .table th, .table td {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+        nav ul{
+            background:#6d0c20;
+        }
+        a:hover, a.active {
             
+            color: #ffffff;
         }
-        canvas {
-            min-width: 400px; /* Ensure that the canvas has enough width to fit 2 bars comfortably */
-            max-width: 8000px; /* Allow more bars to be shown on scrolling */
-        }
-        nav{
-            background:#DC143C;}
-        a.active, a:hover {
-                background: #f15474;
-                transition: .5s;
-            }
-     
-        /* Mobile adjustments */
-        @media (max-width: 768px) {
-            .chart-container {
-                width: 95%;
-                height: 50vh; /* Reduced height for mobile */
-                max-height: 500px; /* Max height */
-            }
-            nav ul{
-                background:#6d0c20;
-            }
-            a:hover, a.active {
-                
-                color: #ffffff;
-            }
-        }
-           
-        
-        
-        /* Smaller devices */
-        @media (max-width: 480px) {
-            .chart-container {
-                height: 40vh; /* Further reduced height for very small screens */
-                max-height: 400px; /* Max height */
-            }
-           
-        }
-    </style>
+    }
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .table {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+        white-space: nowrap;
+        text-align: center;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .table-bordered {
+        border: 1px solid #dee2e6;
+    }
+    
+    .table-bordered th, 
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #4a6cf7 #e9ecef;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: #4a6cf7;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background-color: #e9ecef;
+    }
+    /* Rest of the previous CSS remains the same */
+</style>
 
-    <div class="chart-container">
-        <h2 class="chart-title">Performance Analysis</h2>
-        <canvas id="analysisChart"></canvas>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Performance Analysis Dashboard</h4>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-scroll-wrapper">
+                        <canvas id="analysisChart" style="width: max-content;"></canvas>
+                    </div>
+                </div>
+                <div class="chart-hint">
+                    Scroll horizontally to view all subjects
+                </div>
+            </div>
+        </div>
     </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Total Questions</th>
+                                    <th>Attempted</th>
+                                    <th>Not Attempted</th>
+                                    <th>Correct</th>
+                                    <th>Incorrect</th>
+                                    <th>Accuracy (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="performanceTableBody">
+                                <!-- Table rows will be dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rest of the HTML remains the same -->
+</div>
 
-    <!-- Pass data to JavaScript -->
-    <script>
-        // Data passed from Django context
-        const labels = {{ labels|safe }};  // Subject names
-        const attempted = {{ attempted|safe }};  // Attempted questions count
-        const correct = {{ correct|safe }};  // Correct answers count
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = {{ labels|safe }};
+    const attempted = {{ attempted|safe }};
+    const correct = {{ correct|safe }};
+    const total_questions = {{ total_questions|safe }};
+    const not_attempted = {{ not_attempted|safe }};
+    const incorrect = {{ incorrect|safe }};
 
-        // Select the canvas element where the chart will be rendered
-        const ctx = document.getElementById('analysisChart').getContext('2d');
+    const ctx = document.getElementById('analysisChart').getContext('2d');
 
-        // Create the chart using Chart.js
-        const analysisChart = new Chart(ctx, {
-            type: 'bar',  // Choose the type of chart (bar, line, etc.)
-            data: {
-                labels: labels,  // Labels for the x-axis (subject names)
-                datasets: [
-                    {
-                        label: 'Attempted',  // Label for the first dataset
-                        data: attempted,  // Data for attempted questions
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',  // Color for attempted bars
-                        borderColor: 'rgba(54, 162, 235, 1)',  // Border color for attempted bars
-                        borderWidth: 1  // Border width of the bars
-                    },
-                    {
-                        label: 'Correct',  // Label for the second dataset
-                        data: correct,  // Data for correct answers
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',  // Color for correct bars
-                        borderColor: 'rgba(75, 192, 192, 1)',  // Border color for correct bars
-                        borderWidth: 1  // Border width of the bars
-                    }
-                ]
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Attempted',
+                data: attempted,
+                type: 'bar',
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1',
             },
-            options: {
-                responsive: true,  // Ensure the chart is responsive
-                maintainAspectRatio: false,  // Allow the chart to grow and shrink with its container
-                plugins: {
-                    legend: {
-                        position: 'top',  // Position of the legend
-                        labels: {
-                            color: '#333'  // Color of the legend text
-                        }
-                    },
-                    
-                    tooltip: {
-                        mode: 'index', // Ensure tooltips activate on the nearest bar
-                        intersect: false, // Hover detection improved
-                    }
+            {
+                label: 'Correct',
+                data: correct,
+                type: 'bar',
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1',
+            },
+            {
+                label: 'Incorrect',
+                data: incorrect,
+                type: 'bar',
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1',
+            },
+            {
+                label: 'Not Attempted',
+                data: not_attempted,
+                type: 'bar',
+                backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                borderColor: 'rgba(255, 206, 86, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1',
+            }
+        ]
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                right: 20
+            }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Subjects',
+                    font: { size: 14 }
                 },
-                interaction: {
-                    mode: 'nearest',  // Trigger tooltips when near a bar
-                    axis: 'x',  // Use the x-axis for detecting hover events
-                    intersect: false  // Ensures hover triggers even if not directly on the bar center
+                grid: {
+                    display: false
                 },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Subjects',  // Title for the x-axis
-                            color: '#333'
-                        },
-                        ticks: {
-                            color: '#333'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Number of Questions',  // Title for the y-axis
-                            color: '#333'
-                        },
-                        ticks: {
-                            beginAtZero: true,
-                            color: '#333'
-                        }
-                    }
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            },
+            y1: {
+                beginAtZero: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Number of Questions',
+                    font: { size: 14 }
+                },
+                grid: {
+                    drawBorder: false
                 }
             }
-        });
-    </script>
-    {% endblock %}
+        },
+        plugins: {
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.formattedValue}`;
+                    }
+                }
+            },
+            legend: {
+                display: true,
+                labels: { 
+                    font: { size: 14 },
+                    padding: 20
+                }
+            }
+        }
+    };
 
-    {% block pp %}
-      <li class="dropdown">
+    const analysisChart = new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: options
+    });
+
+    // Dynamically set canvas width based on number of labels
+    const canvasWidth = Math.max(labels.length * 60, window.innerWidth - 40);  // Reduced multiplier from 80 to 60
+    ctx.canvas.style.width = `${canvasWidth}px`;
+    ctx.canvas.width = canvasWidth;
+    analysisChart.resize();
+
+    // Dynamically populate performance table
+    const tableBody = document.getElementById('performanceTableBody');
+    labels.forEach((subject, index) => {
+        const accuracy = total_questions[index] > 0 
+            ? ((correct[index] / total_questions[index]) * 100).toFixed(2) 
+            : '0.00';
+        const row = `
+            <tr>
+                <td>${subject}</td>
+                <td>${total_questions[index]}</td>
+                <td>${attempted[index]}</td>
+                <td>${not_attempted[index]}</td>
+                <td>${correct[index]}</td>
+                <td>${incorrect[index]}</td>
+                <td style="color: green;">${accuracy}%</td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+</script>
+{% endblock %}
+
+{% block pp %}
+    <li class="dropdown">
         <a href="javascript:void(0)" class="dropbtn">
-          <i class="fas fa-user-circle profile-icon"></i>
-          {{ user.username }}
+            <i class="fas fa-user-circle profile-icon"></i>
+            {{ user.username }}
         </a>
         <div class="dropdown-content">
-          <a href="#">Settings</a>
-          <a href="{% url 'logout' %}">Logout</a>
+            <a href="#">Settings</a>
+            <a href="{% url 'logout' %}">Logout</a>
         </div>
-      </li>
-    {% endblock %}
+    </li>
+{% endblock %}

@@ -13,6 +13,7 @@ class Profile(BaseModel):
     email_token = models.CharField(max_length=100 , null=True , blank=True)
     profile_image = models.ImageField(upload_to='profile/', null=True, blank=True)
     reset_token = models.CharField(max_length=100, null=True, blank=True)  # New field for password reset token
+    current_test = models.CharField(max_length=100, null=True, blank=True)  # New field for password reset token
 
     def __str__(self):
         return self.user.username

@@ -7,7 +7,13 @@
   list-style: none;
   box-sizing: border-box;
 }
-
+:root {
+  --primary-blue: #1E40AF;
+  --secondary-crimson: #B91C1C;
+  --accent-yellow: #FBBF24;
+  --deep-black: #0A0A0A;
+  --soft-blue: #E6F2FF;
+}
 
 body{
   font-family: "Roboto Condensed", sans-serif;
@@ -18,22 +24,30 @@ header {
   top: 0;
   z-index: 1000;
 }
-
 nav {
-  background: #004aad;
+  background-color: rgba(255,255,255,1) !important;
   height: 80px;
   width: 100%;
+  --tw-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   
 }
-
-label.logo {
-  color: white;
-  font-size: 35px;
+.logo {
+  font-weight: 900;
+  background: linear-gradient(to right, var(--primary-blue), var(--secondary-crimson));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;  font-size: 35px;
   line-height: 80px;
   padding: 0 100px;
   font-weight: bold;
-}
+  display: inline; /* or inline-block */
 
+}
+.fas:not(.nfas){
+  background: linear-gradient(to right, var(--primary-blue), var(--secondary-crimson));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;  font-size: 35px;
+}
 nav ul {
   float: right;
   margin-right: 20px;
@@ -46,16 +60,16 @@ nav ul li {
 }
 
 nav ul li a {
-  color: white;
+  color: rgb(5, 5, 5);
   font-size: 17px;
   padding: 7px 13px;
-  border-radius: 3px;
   text-transform: uppercase;
 }
 
-a.active, a:hover {
-  background: #1b9bff;
-  transition: .5s;
+nav ul li a:not(.dropbtn):active,
+nav ul li a:not(.dropbtn):hover  {
+  border:solid 2px  #004aad;
+  border-radius: 30px;
 }
 
 .checkbtn {
@@ -115,14 +129,18 @@ a.active, a:hover {
   display: block;
 }
 footer {
-  background: #004aad;
-  color: white;
+  background-color: white;
+  --tw-shadow: 0 -10px 15px rgba(0, 0, 0, 0.1), 0 -4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  
+  color: rgb(0, 0, 0);
   text-align: center;
   padding: 20px 0;
   position: relative;
   width: 100%;
   bottom: 0;
 }
+
 
 .footer-container {
   max-width: 1200px;
@@ -148,7 +166,7 @@ footer {
 }
 
 .footer-links li a {
-  color: white;
+  color: rgb(14, 13, 13);
   font-size: 16px;
   text-transform: uppercase;
   transition: color 0.3s;
@@ -178,9 +196,9 @@ footer {
   }
   nav ul {
     position: fixed;
-    width: 100%;
+    width: 60%;
     height: 100vh;
-    background: #2c3e50;
+    background: #edeeee;
     top: 80px;
     left: -100%;
     text-align: center;
@@ -193,10 +211,11 @@ footer {
   }
   nav ul li a {
     font-size: 20px;
+    color:black;
   }
   a:hover, a.active {
     background: none;
-    color: #0082e6;
+    color: #004aad;
   }
   #check:checked ~ ul {
     left: 0;

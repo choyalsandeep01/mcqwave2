@@ -174,7 +174,7 @@ nav {
 }
 
 .header-buttons button:not(.save):not(.review):hover {
-    background-color: #0b7dda; /* Darker blue on hover */
+    background-color: #004aad; /* Darker blue on hover */
 }
 
 .mcq-header .timer {
@@ -249,7 +249,6 @@ nav {
 
 .question p {
     margin: 20px 0;
-    
 }
 
 .question img {

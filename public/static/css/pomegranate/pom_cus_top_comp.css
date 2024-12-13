@@ -38,11 +38,7 @@ h1, h2, h3 {
     margin-bottom: 20px;
     background-color: #fff;
 }
-footer {
-    margin-top: 20px;
-    font-size: 0.9em;
-    background:#DC143C !important;
-}
+
 .content {
     margin: 0 auto;
 }
@@ -82,12 +78,7 @@ canvas {
 .action-button:hover {
     background-color: darkred;
 }
-nav{
-    background:#DC143C;}
-a.active, a:hover {
-        background: #f15474;
-        transition: .5s;
-    }
+
     .chart-container-scrollable {
         overflow-x: auto; /* Enables horizontal scrolling */
         white-space: nowrap; /* Ensures the bars are in one line */
@@ -109,11 +100,5 @@ a.active, a:hover {
         font-size: 14px;
         padding: 8px 15px;
     }
-    nav ul{
-        background:#6d0c20;
-    }
-    a:hover, a.active {
-        
-        color: #ffffff;
-    }
+    
 }

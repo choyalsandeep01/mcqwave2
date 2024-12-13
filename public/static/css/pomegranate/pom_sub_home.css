@@ -43,11 +43,7 @@
     margin-bottom: 20px;
     color: #555;
   }
-  footer {
-    margin-top: 20px;
-    font-size: 0.9em;
-    background:#DC143C !important;
-}
+ 
   .dropdown-container-sub-home {
     margin-bottom: 20px;
   }
@@ -97,22 +93,10 @@
     0% { opacity: 0; transform: translateY(50px); }
     100% { opacity: 1; transform: translateY(0); }
   }
-  nav{
-    background:#DC143C;
-    -webkit-background: #DC143C; /* For older Safari */}
-a.active, a:hover {
-        background: #f15474;
-        transition: .5s;
-    }
+  
 
     @media (max-width: 768px) {
 
-      nav ul{
-        background:#6d0c20;
-    }
-    a:hover, a.active {
-        
-        color: #ffffff;
-    }
+     
 
     }

@@ -50,7 +50,9 @@ def sign_up(request):
 
 
 def log_in(request):
-
+    if request.user.is_authenticated:
+        user_uuid = request.user.profile.email_token
+        return redirect(reverse('go_to_home', kwargs={'uuid': user_uuid})) 
     if request.method == 'POST':
         username = request.POST.get('username')
         
@@ -197,3 +199,9 @@ def resend_email(request):
             return redirect('resend_email')
 
     return render(request, 'accounts/resend_email.html')
+
+def landing(request):
+        if request.user.is_authenticated:
+            user_uuid = request.user.profile.email_token
+            return redirect(reverse('go_to_home', kwargs={'uuid': user_uuid})) 
+        return render(request, 'home/landing.html')

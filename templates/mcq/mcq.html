@@ -8,7 +8,36 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<style>
+    
+        @keyframes slideIn {
+            0% { transform: translateY(-100%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100%); }
+        }
+        .notification {
+            animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-in forwards 5s;
+            z-index: 1000;
+        }
+        .notification-info {
+            background-color: rgba(59, 130, 246, 0.9); /* Blue with slight transparency */
+        }
+        .notification-success {
+            background-color: rgba(16, 185, 129, 0.9); /* Green with slight transparency */
+        }
+        .notification-error {
+            background-color: rgba(239, 68, 68, 0.9); /* Red with slight transparency */
+        }
+        .notification-warning {
+            background-color: rgba(245, 158, 11, 0.9); /* Yellow with slight transparency */
+        }
+    
 
+</style>
 <div id="results-section" style="display:none;">
     <h2>Quiz Results</h2>
     <div class="result-container">
@@ -79,14 +108,14 @@
     </div>
 
     <div class="mcq-footer">
-        <button class="bookmark" id="bookmark-button"><i class="fas fa-bookmark"></i></button>
+        <button class="bookmark" id="bookmark-button"><i class="fas fa-bookmark nfas"></i></button>
         <div id="expanded-menu" class="expanded-menu hidden">
             <button class="action-btn1" data-type="Star">⭐ Star</button>
             <button class="action-btn1" data-type="Unstudied">📚 Unstudied</button>
             <button class="action-btn1" data-type="Other">💡 Other</button>
         </div>
-        <button class="back" id="back-button"><i class="fas fa-arrow-left"></i> Back</button>
-            <button class="next" id="next-button">    Next <i class="fas fa-arrow-right"></i>
+        <button class="back" id="back-button"><i class="fas fa-arrow-left nfas" ></i> Back</button>
+            <button class="next" id="next-button">    Next <i class="fas fa-arrow-right nfas"></i>
         
         
     </div>
@@ -119,10 +148,49 @@
     </div>
     
 </div>
-<button id="toggle-draw-btn"><i class="fas fa-pencil-alt"></i></button>
+<button id="toggle-draw-btn"><i class="fas fa-pencil-alt nfas"></i></button>
 <canvas id="drawingCanvas"></canvas>
 <div id="loader" class="loader"></div>
 
+{% if messages %}
+        <div class="fixed top-20 left-0 w-full z-9999999">
+            {% for message in messages %}
+                <div class="notification notification-{{ message.tags }} text-white text-center p-4 shadow-lg">
+                    <div class="max-w-xl mx-auto flex items-center justify-center space-x-4">
+                        {% if message.tags == 'info' %}
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        {% elif message.tags == 'success' %}
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        {% elif message.tags == 'warning' %}
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        {% elif message.tags == 'error' %}
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        {% endif %}
+                        <span class="text-lg font-semibold">{{ message }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <script>
+        // Optional: JavaScript to remove messages after animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const notifications = document.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                setTimeout(() => {
+                    notification.remove();
+                }, 5500); // Slightly longer than CSS animation to ensure removal
+            });
+        });
+    </script>
 
 
 <script>
@@ -154,12 +222,14 @@
     
     let questionTimes = {};
     {% endif %}
+    console.log(selectedAnswerTexts);
     let currentQuestionStartTime = null;
     let currentQuestionUID = null;
     let currentquestionuidforoption =null;
     function loadQuestion(index) {
         if (index < 0 || index >= mcqs.length) return; // Bounds check
-    
+        console.log(selectedAnswerTexts);
+
         const mcq = mcqs[index];
         const mcqUid = mcq.uid;
         document.getElementById('question-text').innerText = mcq.text;
@@ -754,7 +824,7 @@ function processQuizResults(correctMcqs) {
 
         if (selectedAnswer === mcq.correct_option) {
             correctAnswers++;
-        } else if (selectedAnswer !== undefined) {
+        } else if (selectedAnswer !== undefined )  {
             wrongAnswers++;
         } else {
             notAttempt++;

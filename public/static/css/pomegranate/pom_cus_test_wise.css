@@ -6,12 +6,7 @@ body {
     background-color: #f4f4f4;
     color: #333;
 }
-nav{
-    background:#DC143C;}
-a.active, a:hover {
-        background: #f15474;
-        transition: .5s;
-    }
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -31,11 +26,7 @@ button {
     border-radius: 5px;
     cursor: pointer;
 }
-footer {
-    margin-top: 20px;
-    font-size: 0.9em;
-    background:#DC143C !important;
-}
+
 a:hover, button:hover {
     background-color: darkred;
 }
@@ -195,13 +186,7 @@ textarea {
     button, a {
         padding: 8px 16px;
     }
-     nav ul{
-        background:#6d0c20;
-    }
-    a:hover, a.active {
-        
-        color: #ffffff;
-    }
+   
     
     .graph-container {
         height: 200px; /* Smaller height for mobile */

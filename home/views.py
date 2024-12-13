@@ -8,8 +8,8 @@ from django.contrib.auth import logout
 # Create your views here.
 def logout_view(request):
     logout(request)  # This logs out the user
-    print("yes")
-    return redirect('signup')
+    
+    return redirect('/')
 
 @login_required(login_url='/')
 def home_view(request,uuid):

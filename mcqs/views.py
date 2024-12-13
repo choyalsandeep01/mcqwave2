@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
 from .models import Subject, Unit, Chapter, Topic
 from django.http import JsonResponse
@@ -66,133 +66,142 @@ import random
 
 @login_required(login_url='/')
 def test(request, email_token):
-    user = request.user
-    test_id = str(uuid.uuid4())
-    
-    selections_json = request.GET.get('selections')
-    selections = json.loads(selections_json) if selections_json else []
-    if not selections:
-        messages.error(request, "Please add selections by clicking on 'Add Selection' after making your choices.")
-        return HttpResponseRedirect(f'/{email_token}/mcq/')
-    question_type = request.GET.get('questionType').title()
-    difficulty_level = request.GET.get('difficultyLevel').title()
-    num_mcqs_str = request.GET.get('numQuestions', '25')
-    try:
-        num_mcqs = round(float(num_mcqs_str))  # Round to the nearest integer
-    except ValueError:
-        num_mcqs = 25  # Default to 25 if input is invalid or missing
-    
-    time_per_question_str = request.GET.get('timePerQuestion')
-    try:
-        time_per_question = float(time_per_question_str) if time_per_question_str else 1.0  # Default to 1 minute if None
-        # Ensure it's within the minimum and maximum limits
-        if time_per_question < 0.6:
-            time_per_question = 0.6
-        elif time_per_question > 3:
-            time_per_question = 3
-    except ValueError:
-        # Set to 1 minute if conversion fails
-        time_per_question = 1.0
-    
+    profile = request.user.profile
+    if not profile.current_test:
 
-    # Alert if number of questions requested exceeds 40
-    if num_mcqs > 40:
-        messages.error(request, "You cannot select more than 40 questions.")
-        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
-
-
-    selections_data = []
-
-    # Step 1: Build queries for each selection
-    for selection in selections:
-        parts = selection.split('-')
-        subject_name = parts[0]
+        user = request.user
+        test_id = str(uuid.uuid4())
         
-        if len(parts) == 1:
-            query = Q(topic__chapter__unit__subject__name=subject_name)
-        elif len(parts) == 2:
-            unit_name = parts[1]
-            query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name)
-        elif len(parts) == 3:
-            unit_name, chapter_name = parts[1], parts[2]
-            query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name, topic__chapter__name=chapter_name)
-        elif len(parts) == 4:
-            unit_name, chapter_name, topic_name = parts[1], parts[2], parts[3]
-            query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name, topic__chapter__name=chapter_name, topic__name=topic_name)
-        else:
-            continue
-
-        # Apply question type and difficulty level filters
-        if question_type and question_type != "Mixed":
-            query &= Q(types__types=question_type)
-        if difficulty_level and difficulty_level != "Mixed":
-            query &= Q(difficulty__name=difficulty_level)
+        selections_json = request.GET.get('selections')
+        selections = json.loads(selections_json) if selections_json else []
+        if not selections:
+            messages.error(request, "Please add selections by clicking on 'Add Selection' after making your choices.")
+            return HttpResponseRedirect(f'/{email_token}/mcq/')
+        question_type = request.GET.get('questionType').title()
+        difficulty_level = request.GET.get('difficultyLevel').title()
+        num_mcqs_str = request.GET.get('numQuestions', '25')
+        try:
+            num_mcqs = round(float(num_mcqs_str))  # Round to the nearest integer
+        except ValueError:
+            num_mcqs = 25  # Default to 25 if input is invalid or missing
         
-        selections_data.append({
-            'selection': selection,
-            'query': query,
-            'parts_count': len(parts)
-        })
-
-    # Step 2: Gather all filtered MCQs based on selections and shuffle powerfully
-    filtered_mcqs = []
-    for selection_data in selections_data:
-        filtered_mcqs.extend(MCQ.objects.filter(selection_data['query']))
-    filtered_mcqs = list(set(filtered_mcqs))  # Remove duplicates
-    random.shuffle(filtered_mcqs)  # Powerful shuffle for variety
-    print("filtered:",len(filtered_mcqs))
-    # Step 3: Calculate inverse weight and allocate MCQs by selection parts
-
-    if len(filtered_mcqs) == 0:
-        messages.error(request, "No MCQs found with the current selections and filters. Please adjust your criteria.")
-        return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
-
-
-    inverse_parts_count_sum = sum(1 / data['parts_count'] for data in selections_data)
-    final_mcqs = []
-    mcqs_count_by_selection = {}
-
-    for selection_data in selections_data:
-        parts_count = selection_data['parts_count']
-        inverse_weight = (1 / parts_count) / inverse_parts_count_sum
-        allocated_mcqs_count = round(inverse_weight * num_mcqs)
+        time_per_question_str = request.GET.get('timePerQuestion')
+        try:
+            time_per_question = float(time_per_question_str) if time_per_question_str else 1.0  # Default to 1 minute if None
+            # Ensure it's within the minimum and maximum limits
+            if time_per_question < 0.6:
+                time_per_question = 0.6
+            elif time_per_question > 3:
+                time_per_question = 3
+        except ValueError:
+            # Set to 1 minute if conversion fails
+            time_per_question = 1.0
         
-        # Select and add to final_mcqs, ensuring no duplicates
-        selected_mcqs = [mcq for mcq in filtered_mcqs if mcq not in final_mcqs][:allocated_mcqs_count]
-        final_mcqs.extend(selected_mcqs)
 
-        # Record and print the count of MCQs for this selection
-        mcqs_count_by_selection[selection_data['selection']] = len(selected_mcqs)
-        print(f"Allocated MCQs from selection '{selection_data['selection']}': {len(selected_mcqs)}")
+        # Alert if number of questions requested exceeds 40
+        if num_mcqs > 40:
+            messages.error(request, "You cannot select more than 40 questions.")
+            return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
 
-    # Step 4: Check if additional MCQs are needed to reach num_mcqs
-    if len(final_mcqs) < num_mcqs:
-        remaining_mcqs = [mcq for mcq in filtered_mcqs if mcq not in final_mcqs]
-        final_mcqs.extend(remaining_mcqs[:num_mcqs - len(final_mcqs)])
 
-    # Step 5: Final count of MCQs from each selection in final_mcqs
-    final_mcqs_count_by_selection = {selection: 0 for selection in selections}
-    for mcq in final_mcqs:
+        selections_data = []
+
+        # Step 1: Build queries for each selection
+        for selection in selections:
+            parts = selection.split('-')
+            subject_name = parts[0]
+            
+            if len(parts) == 1:
+                query = Q(topic__chapter__unit__subject__name=subject_name)
+            elif len(parts) == 2:
+                unit_name = parts[1]
+                query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name)
+            elif len(parts) == 3:
+                unit_name, chapter_name = parts[1], parts[2]
+                query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name, topic__chapter__name=chapter_name)
+            elif len(parts) == 4:
+                unit_name, chapter_name, topic_name = parts[1], parts[2], parts[3]
+                query = Q(topic__chapter__unit__subject__name=subject_name, topic__chapter__unit__name=unit_name, topic__chapter__name=chapter_name, topic__name=topic_name)
+            else:
+                continue
+
+            # Apply question type and difficulty level filters
+            if question_type and question_type != "Mixed":
+                query &= Q(types__types=question_type)
+            if difficulty_level and difficulty_level != "Mixed":
+                query &= Q(difficulty__name=difficulty_level)
+            
+            selections_data.append({
+                'selection': selection,
+                'query': query,
+                'parts_count': len(parts)
+            })
+
+        # Step 2: Gather all filtered MCQs based on selections and shuffle powerfully
+        filtered_mcqs = []
         for selection_data in selections_data:
-            if mcq in MCQ.objects.filter(selection_data['query']):
-                final_mcqs_count_by_selection[selection_data['selection']] += 1
+            filtered_mcqs.extend(MCQ.objects.filter(selection_data['query']))
+        filtered_mcqs = list(set(filtered_mcqs))  # Remove duplicates
+        random.shuffle(filtered_mcqs)  # Powerful shuffle for variety
+        print("filtered:",len(filtered_mcqs))
+        # Step 3: Calculate inverse weight and allocate MCQs by selection parts
 
-    # Print the count of MCQs from each selection in final_mcqs
-    for selection, count in final_mcqs_count_by_selection.items():
-        print(f"Final count of MCQs from selection '{selection}': {count}")
-    print("final:",len(final_mcqs) )
-    # Step 6: Serialize and prepare data for rendering
-    total_time_minutes = time_per_question * len(final_mcqs)
-    print(total_time_minutes)
-    total_time_seconds = round(total_time_minutes * 60)
+        if len(filtered_mcqs) == 0:
+            messages.error(request, "No MCQs found with the current selections and filters. Please adjust your criteria.")
+            return HttpResponseRedirect('/7bee884d-342b-4713-87c1-baf10612d296/mcq/')
 
-    serializer = MCQSerializer(final_mcqs, many=True)
-    test_session = TestSession.objects.create(user=user, test_id=test_id, total_questions=len(final_mcqs), selections=selections,totaltime=total_time_seconds)
-    for mcq in final_mcqs:
-        TestAnswer.objects.create(test_session=test_session, mcq_uid=mcq.uid)
-    
-    return render(request, 'mcq/mcq.html', {'mcqs': json.dumps(serializer.data), 'count': len(final_mcqs), 'test_id': test_id,'total_time': total_time_minutes})
 
+        inverse_parts_count_sum = sum(1 / data['parts_count'] for data in selections_data)
+        final_mcqs = []
+        mcqs_count_by_selection = {}
+
+        for selection_data in selections_data:
+            parts_count = selection_data['parts_count']
+            inverse_weight = (1 / parts_count) / inverse_parts_count_sum
+            allocated_mcqs_count = round(inverse_weight * num_mcqs)
+            
+            # Select and add to final_mcqs, ensuring no duplicates
+            selected_mcqs = [mcq for mcq in filtered_mcqs if mcq not in final_mcqs][:allocated_mcqs_count]
+            final_mcqs.extend(selected_mcqs)
+
+            # Record and print the count of MCQs for this selection
+            mcqs_count_by_selection[selection_data['selection']] = len(selected_mcqs)
+            print(f"Allocated MCQs from selection '{selection_data['selection']}': {len(selected_mcqs)}")
+
+        # Step 4: Check if additional MCQs are needed to reach num_mcqs
+        if len(final_mcqs) < num_mcqs:
+            remaining_mcqs = [mcq for mcq in filtered_mcqs if mcq not in final_mcqs]
+            final_mcqs.extend(remaining_mcqs[:num_mcqs - len(final_mcqs)])
+
+        # Step 5: Final count of MCQs from each selection in final_mcqs
+        final_mcqs_count_by_selection = {selection: 0 for selection in selections}
+        for mcq in final_mcqs:
+            for selection_data in selections_data:
+                if mcq in MCQ.objects.filter(selection_data['query']):
+                    final_mcqs_count_by_selection[selection_data['selection']] += 1
+
+        # Print the count of MCQs from each selection in final_mcqs
+        for selection, count in final_mcqs_count_by_selection.items():
+            print(f"Final count of MCQs from selection '{selection}': {count}")
+        # Step 6: Serialize and prepare data for rendering
+        total_time_minutes = time_per_question * len(final_mcqs)
+        total_time_seconds = round(total_time_minutes * 60)
+
+        serializer = MCQSerializer(final_mcqs, many=True)
+        test_session = TestSession.objects.create(user=user, test_id=test_id, total_questions=len(final_mcqs), selections=selections,totaltime=total_time_seconds)
+        current_test=request.user.profile
+        current_test.current_test = test_id
+        current_test.save()
+        for mcq in final_mcqs:
+            TestAnswer.objects.create(test_session=test_session, mcq_uid=mcq.uid)
+        
+        return render(request, 'mcq/mcq.html', {'mcqs': json.dumps(serializer.data), 'count': len(final_mcqs), 'test_id': test_id,'total_time': total_time_minutes})
+
+    else:
+        # If cntt_test is not blank, redirect to continue_test 
+        # with the existing test ID
+
+        return redirect('cont', test_id=profile.current_test)
 
 
 
@@ -310,6 +319,8 @@ from decimal import Decimal
 from django.core.exceptions import ObjectDoesNotExist
 
 def continue_test(request, test_id):
+    messages.info(request, "You have an ongoing test. Redirecting to continue your previous test.")
+
     user = request.user
 
     try:
@@ -340,21 +351,17 @@ def continue_test(request, test_id):
         except ObjectDoesNotExist:
             continue  # Skip if the MCQ does not exist
         if answer.is_attempted:
-            if answer.selected_option == "A":
-                selected_option_text = mcq.option_1
-            elif answer.selected_option == "B":
-                selected_option_text = mcq.option_2
-            elif answer.selected_option == "C":
-                selected_option_text = mcq.option_3
-            elif answer.selected_option == "D":
-                selected_option_text = mcq.option_4
-            else:
-                selected_option_text = ''  # Unexpected value
-        else:
-            selected_option_text = ''  # Not attempted
+            selected_option_text = {
+                "A": mcq.option_1,
+                "B": mcq.option_2,
+                "C": mcq.option_3,
+                "D": mcq.option_4
+            }.get(answer.selected_option)
+            
+            if selected_option_text:
+                selected_option_texts[index] = selected_option_text
 
     # Populate the selected_answers dictionary
-        selected_option_texts[index] = selected_option_text
         serializer = MCQSerializer(mcq)
         mcq_data = serializer.data
         mcq_data['selected_option'] = answer.selected_option
@@ -449,12 +456,13 @@ def submitted_active(request):
 
                     
                      
-                    print(test_answer.timespent)
                     test_session.timetaken = total_seconds
                     test_session.submitted = True
                     test_session.score = score
-                    print(test_session.submitted)
                     test_session.save()  # Force update without conditional checks
+                    current_test=request.user.profile
+                    current_test.current_test = ''
+                    current_test.save()
                     
             
                 

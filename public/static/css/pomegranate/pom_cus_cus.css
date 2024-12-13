@@ -18,17 +18,7 @@ body {
     background-color: white;
     
 }
-footer {
-    margin-top: 20px;
-    font-size: 0.9em;
-    background:#DC143C !important;
-}
-nav{
-    background:#DC143C;}
-a.active, a:hover {
-        background: #f15474;
-        transition: .5s;
-    }
+
 /* Section Heading */
 h1 {
     text-align: center;
@@ -87,11 +77,5 @@ canvas {
         width: 100%;
         height: 300px; /* Increase height to make charts more prominent on mobile */
     }
-    nav ul{
-        background:#6d0c20;
-    }
-    a:hover, a.active {
-        
-        color: #ffffff;
-    }
+    
 }

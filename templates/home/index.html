@@ -548,13 +548,13 @@
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'option';
                 optionDiv.textContent = option;
-                optionDiv.onclick = () => handleAnswerSelection(optionDiv, option, question.correct_answer);
+                optionDiv.onclick = () => handleAnswerSelection(optionDiv, option, question.correct_answer,question.explanation);
                 optionsContainer.appendChild(optionDiv);
             }
         });
     }
     
-    function handleAnswerSelection(selectedElement, selectedAnswer, correctAnswer) {
+    function handleAnswerSelection(selectedElement, selectedAnswer, correctAnswer,explanation) {
         // Remove previous selections
         document.querySelectorAll('.option').forEach(option => {
             option.classList.remove('selected', 'correct', 'incorrect');
@@ -571,7 +571,7 @@
     
         resultMessage.textContent = isCorrect 
             ? '🎉 Correct! Well done!' 
-            : `❌ Incorrect. The correct answer is ${correctAnswer}.`;
+            : `❌ Incorrect. ${explanation}.`;
         resultMessage.className = `result-message ${isCorrect ? 'correct' : 'incorrect'}`;
         resultMessage.style.display = 'block';
     

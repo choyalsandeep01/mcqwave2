@@ -1186,6 +1186,7 @@ def qod(request):
                 mcq.option_4
             ],
             'correct_answer': mcq.correct_option,
+            'explanation':mcq.explanation,
             'has_image': bool(mcq.image),
             'image_url': mcq.image.url if mcq.image else None
         }

@@ -3,6 +3,8 @@
 {% block title %}Home-Register{% endblock title %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <link rel="stylesheet" href="/media/css/signup.css">
 <style>
 .password-toggle {
@@ -27,120 +29,124 @@
 
 <div class="signup-container">
     <div class="signup-box">
-        <h2>Register Here</h2>
-        <form method="POST" id="signupForm">
+        <div class="login-header">
+            <h2>Create Account</h2>
+            <p class="subtitle">Please fill in your details to register</p>
+        </div>
+        
+        <form method="POST" id="signupForm" class="login-form">
             {% csrf_token %}
             {% include "base/alert.html" %}
+            
             <div class="form-group">
-                <label for="first_name">First Name</label>
-                <input type="text" id="first_name" name="first_name">
+                <div class="input-group">
+                    <i class="fas fa-user input-icon si"></i>
+                    <input type="text" id="first_name" name="first_name" placeholder="Enter your first name">
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="last_name">Last Name</label>
-                <input type="text" id="last_name" name="last_name">
+                <div class="input-group">
+                    <i class="fas fa-user input-icon si"></i>
+                    <input type="text" id="last_name" name="last_name" placeholder="Enter your last name">
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username">
-                <small id="usernameFeedback" style="color: red; display: none;">
+                <div class="input-group">
+                    <i class="fas fa-at input-icon si"></i>
+                    <input type="text" id="username" name="username" placeholder="Choose a username">
+                </div>
+                <small id="usernameFeedback" class="error-feedback">
                     Username cannot contain spaces, uppercase letters, or special characters.
                 </small>
             </div>
+
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div style="position: relative;">
-                    <input type="password" id="password" name="password">
-                    <svg class="password-toggle" onclick="togglePassword('password')" id="password-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle class="eye-open" cx="12" cy="12" r="3"></circle>
-                        <path class="eye-closed" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" style="display: none"></path>
-                        <line class="eye-closed" x1="1" y1="1" x2="23" y2="23" style="display: none"></line>
-                    </svg>
+                <div class="input-group">
+                    <i class="fas fa-envelope input-icon si"></i>
+                    <input type="email" id="email" name="email" placeholder="Enter your email">
                 </div>
             </div>
+
             <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <div style="position: relative;">
-                    <input type="password" id="confirm_password" name="confirm_password">
-                    <svg class="password-toggle" onclick="togglePassword('confirm_password')" id="confirm-password-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle class="eye-open" cx="12" cy="12" r="3"></circle>
-                        <path class="eye-closed" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" style="display: none"></path>
-                        <line class="eye-closed" x1="1" y1="1" x2="23" y2="23" style="display: none"></line>
-                    </svg>
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon si"></i>
+                    <input type="password" id="password" name="password" placeholder="Create a password">
+                    <i class="far fa-eye-slash toggle-password" onclick="togglePassword('password')"></i>
                 </div>
-                <small id="passwordFeedback" style="color: red; display: none;">
+            </div>
+
+            <div class="form-group">
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon si"></i>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password">
+                    <i class="far fa-eye-slash toggle-password" onclick="togglePassword('confirm_password')"></i>
+                </div>
+                <small id="passwordFeedback" class="error-feedback">
                     Passwords do not match!
                 </small>
             </div>
-            <button type="submit">Signup</button>
-            <p>Already have an account? <a href="/login">Login</a></p>
-            <p>Email is not verified? <a href="/resend_email">Resend Email Verification Link</a></p>
+
+            <button type="submit" class="login-btn">
+                <span>Create Account</span>
+                <i class="fas fa-arrow-right nfas"></i>
+            </button>
+
+            <div class="additional-links">
+                <p>Already have an account? <a href="/login" class="highlight-link">Login</a></p>
+                <p>Email not verified? <a href="/resend_email" class="highlight-link">Resend Verification Link</a></p>
+            </div>
         </form>
     </div>
 </div>
-
 <script>
-// Username validation
-document.getElementById('username').addEventListener('input', function() {
-    const username = this.value;
-    const feedback = document.getElementById('usernameFeedback');
-    const isValid = /^[a-z0-9]+$/.test(username);
-
-    if (!isValid) {
-        feedback.style.display = 'block';
-    } else {
-        feedback.style.display = 'none';
+    // Username validation
+    document.getElementById('username').addEventListener('input', function() {
+        const username = this.value;
+        const feedback = document.getElementById('usernameFeedback');
+        const isValid = /^[a-z0-9]+$/.test(username);
+        
+        feedback.style.display = isValid ? 'none' : 'block';
+    });
+    
+    // Password visibility toggle
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIcon = passwordInput.nextElementSibling;
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        }
     }
-});
-
-// Password visibility toggle
-function togglePassword(inputId) {
-    const passwordInput = document.getElementById(inputId);
-    const toggleIcon = document.getElementById(inputId === 'password' ? 'password-toggle' : 'confirm-password-toggle');
-    const openEyePaths = toggleIcon.querySelectorAll('.eye-open');
-    const closedEyePaths = toggleIcon.querySelectorAll('.eye-closed');
-
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        openEyePaths.forEach(path => path.style.display = 'none');
-        closedEyePaths.forEach(path => path.style.display = 'block');
-    } else {
-        passwordInput.type = 'password';
-        openEyePaths.forEach(path => path.style.display = 'block');
-        closedEyePaths.forEach(path => path.style.display = 'none');
-    }
-}
-
-// Password matching validation
-document.getElementById('signupForm').addEventListener('submit', function(e) {
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirm_password').value;
-    const passwordFeedback = document.getElementById('passwordFeedback');
-
-    if (password !== confirmPassword) {
-        e.preventDefault();
-        passwordFeedback.style.display = 'block';
-    } else {
-        passwordFeedback.style.display = 'none';
-    }
-});
-
-// Real-time password matching validation
-document.getElementById('confirm_password').addEventListener('input', function() {
-    const password = document.getElementById('password').value;
-    const confirmPassword = this.value;
-    const passwordFeedback = document.getElementById('passwordFeedback');
-
-    if (password !== confirmPassword) {
-        passwordFeedback.style.display = 'block';
-    } else {
-        passwordFeedback.style.display = 'none';
-    }
-});
-</script>
+    
+    // Form submission validation
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const passwordFeedback = document.getElementById('passwordFeedback');
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            passwordFeedback.style.display = 'block';
+        } else {
+            passwordFeedback.style.display = 'none';
+        }
+    });
+    
+    // Real-time password matching validation
+    document.getElementById('confirm_password').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        const passwordFeedback = document.getElementById('passwordFeedback');
+        
+        passwordFeedback.style.display = password !== confirmPassword ? 'block' : 'none';
+    });
+    </script>
 {% endblock %}
